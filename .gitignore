@@ -1,0 +1,64 @@
+﻿# ─── Python ───────────────────────────────────
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# ─── Environment & Secrets ────────────────────
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+secrets/
+kaggle.json
+
+# ─── Node / React Native (for Weeks 5-7) ──────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.expo/
+.expo-shared/
+
+# ─── Database / Cache ─────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+redis-data/
+postgres-data/
+
+# ─── ML Artifacts (we DO want some, NOT others) ───
+# Keep the deployed model:
+!backend/ml/crop_disease_model.tflite
+!backend/ml/class_names.json
+# Ignore the heavy intermediate Keras checkpoints:
+*.keras
+*.h5
+checkpoints/
+plantvillage/
+plantvillage-dataset.zip
+
+# ─── IDE / Editor ─────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.cursorignore
+
+# ─── OS Junk ──────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Build / Dist ─────────────────────────────
+dist/
+build/
+*.egg
