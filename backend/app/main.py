@@ -1,4 +1,9 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import get_db
+
 
 app = FastAPI(
     title="AgroSense API",
@@ -19,3 +24,13 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+
+@app.get("/health/db")
+async def db_health_check(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(text("SELECT 1"))
+    value = result.scalar()
+    return {
+        "status": "ok" if value == 1 else "error",
+        "database": "postgresql",
+    }
