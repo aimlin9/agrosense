@@ -32,3 +32,12 @@ class FarmerResponse(BaseModel):
     preferred_language: str
     is_sms_user: bool
     created_at: datetime
+
+class LoginRequest(BaseModel):
+    phone_number: str = Field(..., min_length=10, max_length=20)
+    password: str = Field(..., min_length=8, max_length=100)
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
