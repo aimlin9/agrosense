@@ -15,7 +15,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 from app.database import Base
-from app.models.farmer import Farmer  # noqa: F401  # ensures model is registered
+import app.models  # noqa: F401  # imports all models via __init__.py
 
 target_metadata = Base.metadata
 
