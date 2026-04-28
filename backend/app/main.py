@@ -3,6 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.routers import auth as auth_router
 
 
 app = FastAPI(
@@ -12,6 +13,11 @@ app = FastAPI(
 )
 
 
+# ─── Routers ─────────────────────────────────────────
+app.include_router(auth_router.router)
+
+
+# ─── Health checks ───────────────────────────────────
 @app.get("/")
 def read_root():
     return {
