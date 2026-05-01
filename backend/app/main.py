@@ -1,20 +1,39 @@
-from fastapi import Depends, FastAPI
+from contextlib import asynccontextmanager
+
+from fastapi import Depends, FastAPI, File, UploadFile
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.routers import auth as auth_router
+from app.services.image_service import preprocess_bytes
+from app.services.ml_service import load_model
+from app.services.storage_service import upload_image
+from app.routers import diagnose as diagnose_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ── Startup ──
+    print("[lifespan] Loading ML model...")
+    load_model()
+    print("[lifespan] Startup complete")
+    yield
+    # ── Shutdown ──
+    print("[lifespan] Shutting down")
 
 
 app = FastAPI(
     title="AgroSense API",
     description="AI-powered crop disease advisory for smallholder farmers",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 
 # ─── Routers ─────────────────────────────────────────
 app.include_router(auth_router.router)
+app.include_router(diagnose_router.router)
 
 
 # ─── Health checks ───────────────────────────────────
@@ -40,3 +59,5 @@ async def db_health_check(db: AsyncSession = Depends(get_db)):
         "status": "ok" if value == 1 else "error",
         "database": "postgresql",
     }
+
+

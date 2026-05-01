@@ -8,14 +8,23 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # Database
+    # ─── Database ──────────────────────────────────────────
     database_url: str = "postgresql+asyncpg://agrosense:agrosense_dev_password@localhost:5432/agrosense"
 
-    # Auth (we'll use these next)
+    # ─── Auth ──────────────────────────────────────────────
     secret_key: str = "change-this-to-a-real-secret-min-32-chars-long"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 10080  # 7 days
 
+    # ─── Cloudflare R2 ─────────────────────────────────────
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket_name: str = "agrosense-photos"
+    r2_endpoint_url: str = ""
+    r2_public_url: str = ""
 
-# Single instance imported everywhere else
+    # ─── Google Gemini ─────────────────────────────────────
+    gemini_api_key: str = ""
+
+
 settings = Settings()
