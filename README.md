@@ -1,122 +1,200 @@
 # 🌱 AgroSense
 
-> AI-powered crop disease detection for smallholder farmers in West Africa.
+**AI-powered crop disease advisory for smallholder farmers in West Africa.**
 
-A farmer photographs a diseased plant. Within seconds, an AI model identifies the disease and recommends treatment — in English or Twi, on a smartphone or even a basic feature phone via SMS.
-
-**Status:** 🚧 In active development · Week 1 of 8 complete
+A farmer photographs a diseased crop. Within seconds the system identifies the disease using a fine-tuned MobileNetV2 model, generates farmer-friendly treatment advice via Gemini, and stores everything for follow-up. Built mobile-first, with an SMS fallback planned for farmers without smartphones.
 
 ---
 
-## 🎯 The problem
+## 📊 The Model
 
-- **2.2 million** smallholder farmers in Ghana
-- **20–40%** of crops lost annually to preventable diseases
-- **1 extension officer** per 1,500+ farmers — expert advice doesn't reach the farm
-- **No existing app** does AI disease diagnosis for Ghanaian crop varieties
+Two-phase transfer learning on MobileNetV2, fine-tuned on PlantVillage (54,305 images, 38 disease classes, 14 crops). Trained on a free Kaggle P100 GPU.
 
-AgroSense closes that gap.
+| Phase | What happened | Best val accuracy |
+|---|---|---|
+| **1** — frozen base | Train classification head only, lr = 1e-3, 10 epochs | **94.6%** |
+| **2** — fine-tune | Unfreeze top 30 layers, lr = 1e-5 (100× smaller), 10 epochs | **97.28%** |
 
----
+Final model: **2.7 MB TFLite file** with default quantization. Negligible accuracy loss vs the Keras original.
 
-## 🧠 The ML model — Week 1 deliverable
+### Training curves
 
-Trained a **MobileNetV2** transfer-learning classifier on the **PlantVillage dataset** (54,305 images, 38 disease classes across 14 crops).
+![Training curves — Phase 1 + Phase 2](notebooks/training_curves_combined.png)
 
-### Results
+The dashed vertical line marks the Phase 1 → Phase 2 transition. Notice the brief training-loss spike at epoch 11 (the "fine-tuning shock" as previously-frozen weights start receiving gradients), followed by recovery and a steady climb to 97.28%.
 
-| Metric | Value |
-|---|---|
-| **Validation accuracy** | **97.28%** |
-| **Validation loss** | 0.0875 |
-| **Final model size (TFLite)** | 2.7 MB |
-| **Training time** | ~50 minutes (Kaggle P100) |
-
-### Two-phase training approach
-
-**Phase 1 — Head training (epochs 1–10):** Frozen MobileNetV2 base, train only the custom classification head with learning_rate=1e-3. Reaches 94.6% validation accuracy.
-
-**Phase 2 — Fine-tuning (epochs 11–20):** Unfreeze top 30 layers of base model, drop learning rate to 1e-5 (100× smaller). Reaches 97.3% validation accuracy.
-
-![Training curves across both phases](notebooks/training_curves_combined.png)
-
-The visible discontinuity at epoch 11 is the *fine-tuning shock* — a brief spike in training loss as previously-frozen layers receive gradients for the first time. The small learning rate keeps it survivable, and the model recovers within an epoch.
-
-### Sample predictions
-
-12-image smoke test on validation data the model has never trained on. **All 12 correct.** Most predictions at 99-100% confidence; one at 53.9% on a visually ambiguous tomato Septoria spot — appropriate uncertainty on a difficult case.
+### Predictions on held-out validation images
 
 ![Sample predictions on validation set](notebooks/predictions_sample.png)
 
+12 out of 12 correct on a randomly sampled batch from the validation set. Most predictions at 99–100% confidence. The model expresses appropriate uncertainty on visually ambiguous cases — e.g., the Tomato Septoria leaf spot at 53.9% — which is exactly the behavior we want for safety-critical advice.
+
 ---
 
-## 🛠️ Tech stack
+## 🏗️ Architecture
 
-### ML pipeline (Week 1) ✅
-- **Training:** TensorFlow 2.19 / Keras (Kaggle Notebooks · P100 GPU)
-- **Architecture:** MobileNetV2 (transfer learning from ImageNet) + custom classification head
-- **Augmentation:** Random flip, rotation, zoom
-- **Deployment format:** TFLite with default quantization (3.6× smaller, negligible accuracy loss)
+```
+┌─────────────────┐     ┌──────────────────────────────────────┐
+│  Mobile / SMS   │────▶│        FastAPI Backend               │
+│  (planned)      │     │                                      │
+└─────────────────┘     │  ┌─────────────────────────────────┐ │
+                        │  │  POST /api/diagnose             │ │
+                        │  └────────┬────────────────────────┘ │
+                        │           │                          │
+                        │           ▼                          │
+                        │  1. Validate JWT + crop_id           │
+                        │  2. Upload photo → Cloudflare R2     │
+                        │  3. Preprocess (Pillow → 224×224)    │
+                        │  4. TFLite inference (top-3)         │
+                        │  5. Disease lookup (PostgreSQL)      │
+                        │  6. Treatment advice (Gemini 2.5)    │
+                        │  7. Persist Diagnosis row            │
+                        │  8. Return JSON response             │
+                        └──────────────────────────────────────┘
+```
 
-### Coming in weeks 2-8
-- **Backend:** Python + FastAPI · PostgreSQL 16 · Redis · Celery
-- **AI text generation:** Google Gemini 1.5 Flash for treatment advice
-- **Storage:** Cloudflare R2 for crop photos
-- **SMS gateway:** Twilio (for farmers without smartphones)
-- **Mobile:** React Native + Expo · Zustand · React Query
-- **Deployment:** Railway (backend) · Expo EAS (Android APK)
+## 🛠️ Tech Stack
+
+| Layer | Choice |
+|---|---|
+| **ML training** | TensorFlow 2.19 + Keras (Kaggle P100 GPU) |
+| **Inference** | TFLite via `tf.lite.Interpreter` (singleton, loaded at startup) |
+| **Backend** | FastAPI + async SQLAlchemy + Pydantic v2 |
+| **Database** | PostgreSQL 16 (Docker) — 10 tables, Alembic migrations |
+| **Cache / queues** | Redis 7 (Docker) |
+| **Object storage** | Cloudflare R2 (S3-compatible via boto3) |
+| **LLM** | Google Gemini 2.5 Flash for treatment advice |
+| **Auth** | JWT + bcrypt password hashing |
+| **Image processing** | Pillow + NumPy |
 
 ---
 
 ## 📁 Project structure
 
+```
 agrosense/
-- backend/ml/crop_disease_model.tflite — trained model (2.7 MB)
-- backend/ml/class_names.json — 38 class labels
-- notebooks/training_curves_combined.png
-- notebooks/predictions_sample.png
-- README.md
-
-The backend/, mobile/, and supporting infrastructure will be built out in weeks 2–8.
+├── README.md
+├── docker-compose.yml          # Postgres 16 + Redis 7
+├── backend/
+│   ├── app/
+│   │   ├── main.py             # FastAPI app, lifespan loads ML model at startup
+│   │   ├── config.py           # Pydantic settings, reads .env
+│   │   ├── database.py         # Async SQLAlchemy engine + session factory
+│   │   ├── models/             # 10 SQLAlchemy ORM tables
+│   │   ├── schemas/            # Pydantic request/response models
+│   │   ├── routers/            # auth, diagnose
+│   │   └── services/
+│   │       ├── ml_service.py        # TFLite singleton + predict()
+│   │       ├── image_service.py     # Pillow preprocessing → [1,224,224,3]
+│   │       ├── storage_service.py   # Cloudflare R2 uploads
+│   │       ├── gemini_service.py    # Treatment advice from Gemini
+│   │       ├── security.py          # JWT + bcrypt
+│   │       └── auth_dependencies.py # FastAPI deps for protected routes
+│   ├── ml/
+│   │   ├── crop_disease_model.tflite   # 2.7 MB, 38 classes
+│   │   └── class_names.json
+│   ├── alembic/                # Database migrations (2 versions so far)
+│   ├── scripts/
+│   │   └── seed_crops_and_diseases.py
+│   ├── requirements.txt
+│   └── .env.example
+└── notebooks/
+    ├── training_curves_combined.png
+    └── predictions_sample.png
+```
 
 ---
 
-## 🗺️ Roadmap
+## 🗺️ Progress
 
-- [x] **Week 1** — ML model training & TFLite export
-- [ ] **Week 2** — FastAPI backend foundation, database schema, auth
-- [ ] **Week 3** — Diagnosis engine with Gemini treatment advice
-- [ ] **Week 4** — Market prices, weather, Twilio SMS gateway, admin endpoints
-- [ ] **Week 5** — Mobile app foundation (Expo, auth, navigation)
-- [ ] **Week 6** — Mobile diagnosis screens (camera + result display)
-- [ ] **Week 7** — Prices/weather screens, offline support, real user testing
-- [ ] **Week 8** — Deployment, demo, portfolio launch
+### ✅ Week 1 — ML model training
+
+- Loaded PlantVillage dataset (54k images, 38 classes) on Kaggle
+- Built two-phase MobileNetV2 transfer learning pipeline with data augmentation
+- Phase 1 (frozen base, 10 epochs): 94.6% val accuracy
+- Phase 2 (top 30 layers unfrozen, lr 1e-5, 10 epochs): **97.28% val accuracy**
+- Smoke-tested on held-out validation images: 12/12 correct
+- Exported to TFLite with default quantization (10 MB Keras → 2.7 MB TFLite)
+- Saved `class_names.json` for index → label mapping
+
+### ✅ Week 2 — Backend foundation
+
+- Containerized PostgreSQL 16 + Redis 7 via Docker Compose
+- Built all 10 SQLAlchemy models per the blueprint schema (farmers, crops, diseases, diagnoses, market_prices, weather_cache, farm_plots, sms_interactions, expert_reviews, admins)
+- Configured Alembic for schema migrations (2 migrations applied)
+- Implemented JWT auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
+- bcrypt password hashing with `passlib`
+- Seeded reference data: 14 crops + 38 diseases mapped to ML class names
+
+### ✅ Week 3 — AI diagnosis pipeline
+
+- **Cloudflare R2** integration for crop photo storage (S3 API via boto3)
+- **Image preprocessing service**: Pillow + NumPy → `[1, 224, 224, 3]` float32 tensor
+- **TFLite inference service**: model loaded once via FastAPI lifespan, singleton interpreter, top-3 predictions per request
+- **Gemini service**: structured-JSON treatment advice prompt tailored for Ghanaian smallholder farmers (Ghana-available products, organic-first, confidence-aware fallback to extension officer when uncertain)
+- **`POST /api/diagnose`**: full pipeline orchestration — auth → R2 upload → preprocess → predict → DB lookup → Gemini → save Diagnosis row → response (~5–10 sec end-to-end)
+
+### 🔜 Up next
+
+- **Week 4** — Market prices, Open-Meteo weather, Twilio SMS gateway, admin endpoints
+- **Weeks 5–7** — React Native mobile app (camera, diagnosis screens, history, prices, weather)
+- **Week 8** — Deploy to Railway, real user testing, demo, portfolio post
 
 ---
 
-## 📊 Dataset
+## 🚀 Running locally
 
-**PlantVillage** — public dataset of 54,305 labeled crop disease images across 38 classes (14 crops). Available on [Kaggle](https://www.kaggle.com/datasets/abdallahalidev/plantvillage-dataset).
+**Prerequisites:** Python 3.12, Docker Desktop, Git.
 
-For Ghana-specific crops missing from PlantVillage, future work will incorporate:
-- **iCassava dataset** for cassava diseases
-- **IITA datasets** for plantain/banana black sigatoka
+```bash
+# 1. Clone and enter
+git clone https://github.com/aimlin9/agrosense.git
+cd agrosense
+
+# 2. Start Postgres + Redis
+docker compose up -d
+
+# 3. Install backend deps
+cd backend
+python -m venv venv
+.\venv\Scripts\Activate.ps1   # Windows PowerShell
+# source venv/bin/activate    # macOS / Linux
+pip install -r requirements.txt
+
+# 4. Configure environment
+cp .env.example .env
+# Edit .env — fill in R2 + Gemini credentials, generate SECRET_KEY:
+#   python -c "import secrets; print(secrets.token_urlsafe(48))"
+
+# 5. Run database migrations
+alembic upgrade head
+
+# 6. Seed reference data
+python -m scripts.seed_crops_and_diseases
+
+# 7. Start the API
+uvicorn app.main:app --reload
+```
+
+Open `http://localhost:8000/docs` for the interactive Swagger UI.
 
 ---
 
-## 👤 Author
+## 🌍 Why this matters
 
-**Ramsey Opoku Gyimah** ([@aimlin9](https://github.com/aimlin9))
-3rd-year Computer Science student · Ghana
+- 2.2M smallholder farmers in Ghana lose 20–40% of crops annually to preventable diseases
+- 1 agricultural extension officer per ~1,500 farmers — expert advice is effectively unreachable
+- No existing app does AI disease diagnosis for Ghanaian crop varieties
+- 33M smallholders across West Africa face the same gap
 
-Building AgroSense as Startup 1 of 3 in an 8-month learning sprint.
+AgroSense puts a 97% accurate, multilingual, Ghana-aware diagnostician in every farmer's pocket — and via SMS, on every feature phone too.
 
 ---
 
 ## 📜 License
 
-To be added.
+MIT — see [LICENSE](LICENSE).
 
----
+## 👤 Author
 
-> *"Diagnose. Treat. Harvest. Repeat."*
+**Ramsey Opoku Gyimah** ([@aimlin9](https://github.com/aimlin9)) — Computer Science student, Accra, Ghana.
