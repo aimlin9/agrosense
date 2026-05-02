@@ -1,45 +1,87 @@
+"""FastAPI dependencies for resolving JWT tokens to Farmer or Admin objects."""
+from uuid import UUID
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
+from app.models.admin import Admin
 from app.models.farmer import Farmer
-from app.services.security import decode_access_token
 
 
-# HTTPBearer: simpler scheme. Looks for "Authorization: Bearer <token>" header.
-# Swagger UI shows a single "Value" field — paste your raw JWT.
-bearer_scheme = HTTPBearer(auto_error=False)
+_security = HTTPBearer()
 
 
 async def get_current_farmer(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(_security),
     db: AsyncSession = Depends(get_db),
 ) -> Farmer:
-    """Resolve the current farmer from a Bearer JWT.
-    Raises 401 if missing, malformed, expired, or pointing to a deleted user."""
+    """Resolve the Bearer JWT to a Farmer row."""
+    try:
+        payload = jwt.decode(
+            credentials.credentials,
+            settings.secret_key,
+            algorithms=[settings.algorithm],
+        )
+        farmer_id_str = payload.get("sub")
+        if not farmer_id_str:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+            )
+        farmer_id = UUID(farmer_id_str)
+    except (JWTError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
 
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-    # 1. No header at all → unauthenticated
-    if credentials is None:
-        raise credentials_exception
-
-    # 2. Decode the token. Returns None if invalid/expired.
-    farmer_id = decode_access_token(credentials.credentials)
-    if farmer_id is None:
-        raise credentials_exception
-
-    # 3. Fetch the farmer from the database.
-    result = await db.execute(select(Farmer).where(Farmer.id == farmer_id))
-    farmer = result.scalar_one_or_none()
-
-    if farmer is None:
-        raise credentials_exception
-
+    farmer = (
+        await db.execute(select(Farmer).where(Farmer.id == farmer_id))
+    ).scalar_one_or_none()
+    if not farmer:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Farmer not found",
+        )
     return farmer
+
+
+async def get_current_admin(
+    credentials: HTTPAuthorizationCredentials = Depends(_security),
+    db: AsyncSession = Depends(get_db),
+) -> Admin:
+    """Resolve the Bearer JWT to an Admin row. 401 if not an admin token."""
+    try:
+        payload = jwt.decode(
+            credentials.credentials,
+            settings.secret_key,
+            algorithms=[settings.algorithm],
+        )
+        admin_id_str = payload.get("sub")
+        is_admin = payload.get("is_admin", False)
+        if not admin_id_str or not is_admin:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Admin credentials required",
+            )
+        admin_id = UUID(admin_id_str)
+    except (JWTError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate admin credentials",
+        )
+
+    admin = (
+        await db.execute(select(Admin).where(Admin.id == admin_id))
+    ).scalar_one_or_none()
+    if not admin or not admin.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin not found or inactive",
+        )
+    return admin

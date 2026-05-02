@@ -105,3 +105,44 @@ def generate_treatment_advice(
     advice = _extract_json(response.text)
     
     return advice
+
+_ADVISORY_TEMPLATE = """\
+You are an agricultural advisor for Ghanaian smallholder farmers.
+
+Based on this 7-day weather forecast, give the farmer simple, actionable planting/farming advice.
+
+Location: {region}
+Crop being grown: {crop_name}
+
+Forecast summary:
+{forecast_summary}
+
+Respond ONLY with valid JSON in exactly this shape:
+
+{{
+  "headline": "One sentence summarizing what the farmer should focus on this week",
+  "rainfall_outlook": "1-2 sentence rainfall summary in plain English",
+  "temperature_outlook": "1-2 sentence temperature summary",
+  "recommendations": ["Action 1", "Action 2", "Action 3"],
+  "warnings": ["Warning 1 if any"]
+}}
+"""
+
+
+def generate_planting_advisory(
+    region: str,
+    crop_name: str,
+    forecast_summary: str,
+) -> dict:
+    """Generate a planting advisory from a forecast summary.
+
+    `forecast_summary` is plain text; the caller is expected to format the
+    forecast data into something readable.
+    """
+    prompt = _ADVISORY_TEMPLATE.format(
+        region=region,
+        crop_name=crop_name,
+        forecast_summary=forecast_summary,
+    )
+    response = _model.generate_content(prompt)
+    return _extract_json(response.text)

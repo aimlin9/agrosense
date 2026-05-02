@@ -22,22 +22,12 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(
-    farmer_id: uuid.UUID,
-    expires_delta: Optional[timedelta] = None,
-) -> str:
-    """Create a signed JWT containing the farmer's id and expiry."""
-    if expires_delta is None:
-        expires_delta = timedelta(minutes=settings.access_token_expire_minutes)
-
-    expire = datetime.now(timezone.utc) + expires_delta
-
-    payload = {
-        "sub": str(farmer_id),       # "subject" — who the token is for
-        "exp": expire,                # "expiration" — when it stops being valid
-        "iat": datetime.now(timezone.utc),  # "issued at"
-    }
-
+def create_access_token(subject: str, extra_claims: dict | None = None) -> str:
+    """Create a JWT for the given subject (farmer or admin id)."""
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    payload = {"sub": subject, "exp": expire, "iat": datetime.now(timezone.utc)}
+    if extra_claims:
+        payload.update(extra_claims)
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 

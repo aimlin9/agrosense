@@ -11,10 +11,13 @@ class Settings(BaseSettings):
     # ─── Database ──────────────────────────────────────────
     database_url: str = "postgresql+asyncpg://agrosense:agrosense_dev_password@localhost:5432/agrosense"
 
+    # ─── Redis ─────────────────────────────────────────────
+    redis_url: str = "redis://localhost:6379/0"
+
     # ─── Auth ──────────────────────────────────────────────
     secret_key: str = "change-this-to-a-real-secret-min-32-chars-long"
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 10080  # 7 days
+    access_token_expire_minutes: int = 10080
 
     # ─── Cloudflare R2 ─────────────────────────────────────
     r2_access_key_id: str = ""

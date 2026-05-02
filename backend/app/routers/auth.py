@@ -16,6 +16,8 @@ from app.services.security import (
     hash_password,
     verify_password,
 )
+from app.models.admin import Admin
+from app.schemas.auth import LoginRequest
 
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -75,7 +77,7 @@ async def login_farmer(
             detail="Invalid phone number or password",
         )
 
-    access_token = create_access_token(farmer.id)
+    access_token = create_access_token(str(farmer.id))
     return TokenResponse(access_token=access_token)
 
 
@@ -86,3 +88,24 @@ async def get_my_profile(
     """Get the profile of the currently authenticated farmer.
     Requires a valid Bearer token."""
     return current_farmer
+
+
+@router.post("/admin/login", response_model=TokenResponse)
+async def admin_login(payload: LoginRequest, db: AsyncSession = Depends(get_db)):
+    """Admin login — uses email instead of phone."""
+    admin = (
+        await db.execute(select(Admin).where(Admin.email == payload.phone_number))
+    ).scalar_one_or_none()
+    if not admin or not verify_password(payload.password, admin.password_hash):
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid admin credentials",
+        )
+    if not admin.is_active:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Admin disabled")
+
+    token = create_access_token(
+        subject=str(admin.id),
+        extra_claims={"is_admin": True},
+    )
+    return TokenResponse(access_token=token, token_type="bearer")

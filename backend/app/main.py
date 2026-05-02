@@ -6,11 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.routers import auth as auth_router
-from app.services.image_service import preprocess_bytes
 from app.services.ml_service import load_model
-from app.services.storage_service import upload_image
 from app.routers import diagnose as diagnose_router
-
+from app.routers import prices as prices_router
+from app.routers import plots as plots_router
+from app.routers import weather as weather_router
+from app.routers import admin as admin_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,7 +35,10 @@ app = FastAPI(
 # ─── Routers ─────────────────────────────────────────
 app.include_router(auth_router.router)
 app.include_router(diagnose_router.router)
-
+app.include_router(prices_router.router)
+app.include_router(plots_router.router)
+app.include_router(weather_router.router)
+app.include_router(admin_router.router)
 
 # ─── Health checks ───────────────────────────────────
 @app.get("/")

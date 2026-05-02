@@ -29,3 +29,7 @@ tensorflow==2.19.0
 
 # Gemini API for treatment advice generation
 google-generativeai==0.7.2
+
+# HTTP client + Redis
+httpx==0.27.0
+redis==5.0.4
