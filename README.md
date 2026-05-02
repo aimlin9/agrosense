@@ -134,12 +134,19 @@ agrosense/
 - **Gemini service**: structured-JSON treatment advice prompt tailored for Ghanaian smallholder farmers (Ghana-available products, organic-first, confidence-aware fallback to extension officer when uncertain)
 - **`POST /api/diagnose`**: full pipeline orchestration — auth → R2 upload → preprocess → predict → DB lookup → Gemini → save Diagnosis row → response (~5–10 sec end-to-end)
 
+### ✅ Week 4 — Supporting features + SMS gateway
+
+- **Market prices** — 30-day price history seeded for 10 crops × 5 Ghanaian markets (Kumasi, Techiman, Makola, Tamale, Kaneshie). Endpoints: `GET /api/prices` (filterable by crop/region/market), `GET /api/prices/trends/{crop_id}` (time-series with 30-day average).
+- **Farm plots** — Owner-scoped CRUD: farmers register fields with crop, GPS, planting date, soil/irrigation type. `GET/POST/PATCH/DELETE /api/plots`.
+- **Weather** — Open-Meteo integration with **6-hour Redis cache**. `GET /api/weather` returns current conditions + 7-day forecast. Cache key rounds GPS to 2 decimals so neighboring requests share results.
+- **Planting advisory** — `GET /api/weather/advisory` feeds the forecast into Gemini for crop-specific, structured JSON advice (rainfall outlook, recommendations, warnings).
+- **Admin dashboard** — Separate JWT issuer (`POST /api/auth/admin/login`) with `is_admin` claim. Endpoints: platform stats (totals, top diseases, healthy %), farmer list, farmer detail with recent diagnoses, all-diagnoses list, **expert review submission** for closing the AI feedback loop.
+- **Twilio SMS gateway** — Inbound webhook (`POST /api/sms/webhook`) auto-creates SMS-only farmer records, classifies intent via Gemini (`diagnosis | price_check | weather | help | other`), dispatches to the right handler, and returns a TwiML reply formatted under 320 chars. Same backend services power the SMS path as the app path — no degraded experience.
+
 ### 🔜 Up next
 
-- **Week 4** — Market prices, Open-Meteo weather, Twilio SMS gateway, admin endpoints
 - **Weeks 5–7** — React Native mobile app (camera, diagnosis screens, history, prices, weather)
 - **Week 8** — Deploy to Railway, real user testing, demo, portfolio post
-
 ---
 
 ## 🚀 Running locally
