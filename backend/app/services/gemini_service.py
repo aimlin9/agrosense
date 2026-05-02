@@ -146,3 +146,35 @@ def generate_planting_advisory(
     )
     response = _model.generate_content(prompt)
     return _extract_json(response.text)
+
+_INTENT_TEMPLATE = """\
+Classify this farmer's SMS into ONE intent. They are smallholder farmers in Ghana.
+
+Message: "{message}"
+Has photo: {has_photo}
+
+Possible intents:
+- diagnosis: farmer describes a sick plant or sends a photo of one
+- price_check: farmer asks about market prices
+- weather: farmer asks about weather, rain, planting time
+- help: farmer asks how to use the service, or sends "HELP"
+- other: anything else, including greetings
+
+Respond ONLY with valid JSON in exactly this shape:
+
+{{
+  "intent": "diagnosis" | "price_check" | "weather" | "help" | "other",
+  "crop_mentioned": "Tomato" | "Maize" | "Cassava" | null,
+  "summary": "Short rephrasing of what the farmer wants"
+}}
+"""
+
+
+def classify_sms_intent(message: str, has_photo: bool = False) -> dict:
+    """Classify an SMS into an intent + extract any crop mentioned."""
+    prompt = _INTENT_TEMPLATE.format(
+        message=message or "(no text, just photo)",
+        has_photo=has_photo,
+    )
+    response = _model.generate_content(prompt)
+    return _extract_json(response.text)

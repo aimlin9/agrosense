@@ -29,5 +29,10 @@ class Settings(BaseSettings):
     # ─── Google Gemini ─────────────────────────────────────
     gemini_api_key: str = ""
 
+    # ─── Twilio ────────────────────────────────────────────
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_phone_number: str = ""
+
 
 settings = Settings()
