@@ -35,13 +35,15 @@ interface DiagnosisData {
   processing_time_ms: number;
 }
 
-const severityColor = (s: string) =>
-  ({
+const severityColor = (s: string | null | undefined) => {
+  if (!s) return '#64748b';
+  return ({
     high: '#dc2626',
     moderate: '#f59e0b',
     low: '#16a34a',
     none: '#16a34a',
-  }[s.toLowerCase()] ?? '#64748b');
+  } as Record<string, string>)[s.toLowerCase()] ?? '#64748b';
+};
 
 export default function ResultScreen() {
   const router = useRouter();

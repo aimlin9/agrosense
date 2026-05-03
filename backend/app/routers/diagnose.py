@@ -91,7 +91,7 @@ async def diagnose(
         confidence_score=top["confidence"],
         all_predictions=predictions,
         is_healthy=is_healthy,
-        treatment_advice=advice_dict["summary"] if advice_dict else None,
+        treatment_advice=advice_dict if advice_dict else None,
         channel="app",
         status="completed",
         processing_time_ms=elapsed_ms,
@@ -122,3 +122,120 @@ async def diagnose(
         processing_time_ms=elapsed_ms,
         created_at=diagnosis_row.created_at,
     )
+
+@router.get("/diagnoses")
+async def list_my_diagnoses(
+    limit: int = 20,
+    farmer: Farmer = Depends(get_current_farmer),
+    db: AsyncSession = Depends(get_db),
+):
+    """Current farmer's diagnosis history, newest first."""
+    stmt = (
+        select(Diagnosis, Crop.name, Disease.display_name)
+        .join(Crop, Crop.id == Diagnosis.crop_id)
+        .outerjoin(Disease, Disease.id == Diagnosis.predicted_disease_id)
+        .where(Diagnosis.farmer_id == farmer.id)
+        .order_by(Diagnosis.created_at.desc())
+        .limit(limit)
+    )
+    rows = (await db.execute(stmt)).all()
+    return [
+        {
+            "id": str(d.id),
+            "crop_name": crop_name,
+            "predicted_disease": disease_name,
+            "confidence": d.confidence_score,
+            "is_healthy": d.is_healthy,
+            "image_url": d.image_url,
+            "created_at": d.created_at.isoformat(),
+        }
+        for d, crop_name, disease_name in rows
+    ]
+
+@router.get("/diagnoses/{diagnosis_id}")
+async def get_my_diagnosis(
+    diagnosis_id: UUID,
+    farmer: Farmer = Depends(get_current_farmer),
+    db: AsyncSession = Depends(get_db),
+):
+    """Single diagnosis with full treatment advice — current farmer only."""
+    stmt = (
+        select(Diagnosis, Crop.name, Disease.display_name)
+        .join(Crop, Crop.id == Diagnosis.crop_id)
+        .outerjoin(Disease, Disease.id == Diagnosis.predicted_disease_id)
+        .where(Diagnosis.id == diagnosis_id, Diagnosis.farmer_id == farmer.id)
+    )
+    row = (await db.execute(stmt)).first()
+    if not row:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Diagnosis not found")
+
+    d, crop_name, disease_name = row
+
+    # ─ Enrich top_predictions with display_name ─────────────
+    raw_preds = d.all_predictions or []
+    class_names = [p["class_name"] for p in raw_preds]
+    if class_names:
+        disease_rows = (
+            await db.execute(
+                select(Disease.model_class_name, Disease.display_name)
+                .where(Disease.model_class_name.in_(class_names))
+            )
+        ).all()
+        name_map = {cn: dn for cn, dn in disease_rows}
+    else:
+        name_map = {}
+
+    top_predictions = [
+        {
+            "class_name": p["class_name"],
+            "display_name": name_map.get(p["class_name"]),
+            "confidence": p["confidence"],
+        }
+        for p in raw_preds
+    ]
+
+    # ─ Normalize treatment_advice ─────────────────────────────
+    # New rows: dict (or JSON string of dict). Legacy rows: plain text.
+    advice = d.treatment_advice
+    if isinstance(advice, str):
+        # Try parsing as JSON first; fall back to plain-text wrapper
+        import json
+        try:
+            parsed = json.loads(advice)
+            if isinstance(parsed, dict):
+                advice = parsed
+            else:
+                raise ValueError
+        except (ValueError, json.JSONDecodeError):
+            # Legacy plain-text — wrap so mobile renders it
+            text_lower = advice.lower()
+            if any(w in text_lower for w in ["very serious", "destroy", "deadly", "severe"]):
+                severity = "high"
+            elif any(w in text_lower for w in ["serious", "spreads", "significant"]):
+                severity = "moderate"
+            elif d.is_healthy:
+                severity = "none"
+            else:
+                severity = "low"
+
+            advice = {
+                "severity": severity,
+                "summary": advice,
+                "immediate_actions": [],
+                "organic_treatment": None,
+                "chemical_treatment": None,
+                "prevention": None,
+            }
+
+    return {
+        "id": str(d.id),
+        "crop_name": crop_name,
+        "image_url": d.image_url,
+        "predicted_disease": disease_name or "Unknown",
+        "confidence": d.confidence_score,
+        "is_healthy": d.is_healthy,
+        "top_predictions": top_predictions,
+        "treatment_advice": advice,
+        "processing_time_ms": d.processing_time_ms or 0,
+        "created_at": d.created_at.isoformat(),
+    }
