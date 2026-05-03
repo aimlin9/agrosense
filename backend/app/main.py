@@ -13,6 +13,7 @@ from app.routers import plots as plots_router
 from app.routers import weather as weather_router
 from app.routers import admin as admin_router
 from app.routers import sms as sms_router
+from app.routers import crops as crops_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,6 +42,7 @@ app.include_router(plots_router.router)
 app.include_router(weather_router.router)
 app.include_router(admin_router.router)
 app.include_router(sms_router.router)
+app.include_router(crops_router.router)
 
 # ─── Health checks ───────────────────────────────────
 @app.get("/")

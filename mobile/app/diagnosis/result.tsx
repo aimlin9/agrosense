@@ -1,0 +1,193 @@
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+interface Prediction {
+  class_name: string;
+  display_name: string | null;
+  confidence: number;
+}
+
+interface TreatmentAdvice {
+  severity: string;
+  summary: string;
+  immediate_actions: string[];
+  organic_treatment: string | null;
+  chemical_treatment: string | null;
+  prevention: string | null;
+}
+
+interface DiagnosisData {
+  id: string;
+  crop_name: string;
+  image_url: string;
+  predicted_disease: string;
+  confidence: number;
+  is_healthy: boolean;
+  top_predictions: Prediction[];
+  treatment_advice: TreatmentAdvice | null;
+  processing_time_ms: number;
+}
+
+const severityColor = (s: string) =>
+  ({
+    high: '#dc2626',
+    moderate: '#f59e0b',
+    low: '#16a34a',
+    none: '#16a34a',
+  }[s.toLowerCase()] ?? '#64748b');
+
+export default function ResultScreen() {
+  const router = useRouter();
+  const { data } = useLocalSearchParams<{ data: string }>();
+  const diagnosis: DiagnosisData = JSON.parse(data);
+
+  const confidencePct = Math.round(diagnosis.confidence * 100);
+  const isHealthy = diagnosis.is_healthy;
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
+      <Image source={{ uri: diagnosis.image_url }} style={styles.image} resizeMode="cover" />
+
+      <View style={styles.body}>
+        <Text style={styles.cropLabel}>{diagnosis.crop_name}</Text>
+        <Text style={[styles.disease, { color: isHealthy ? '#16a34a' : '#0f172a' }]}>
+          {diagnosis.predicted_disease}
+        </Text>
+
+        <View style={styles.confidenceRow}>
+          <View
+            style={[
+              styles.severityBadge,
+              {
+                backgroundColor:
+                  diagnosis.treatment_advice
+                    ? severityColor(diagnosis.treatment_advice.severity)
+                    : '#16a34a',
+              },
+            ]}
+          >
+            <Text style={styles.severityText}>
+              {diagnosis.treatment_advice?.severity?.toUpperCase() ?? (isHealthy ? 'HEALTHY' : 'UNKNOWN')}
+            </Text>
+          </View>
+          <Text style={styles.confidence}>{confidencePct}% confident</Text>
+        </View>
+
+        {diagnosis.treatment_advice && (
+          <>
+            <Section title="Summary" body={diagnosis.treatment_advice.summary} />
+
+            {diagnosis.treatment_advice.immediate_actions.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Immediate actions</Text>
+                {diagnosis.treatment_advice.immediate_actions.map((action, i) => (
+                  <View key={i} style={styles.actionRow}>
+                    <Text style={styles.actionNumber}>{i + 1}</Text>
+                    <Text style={styles.actionText}>{action}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {diagnosis.treatment_advice.organic_treatment && (
+              <Section title="Organic treatment" body={diagnosis.treatment_advice.organic_treatment} />
+            )}
+
+            {diagnosis.treatment_advice.chemical_treatment && (
+              <Section title="Chemical treatment" body={diagnosis.treatment_advice.chemical_treatment} />
+            )}
+
+            {diagnosis.treatment_advice.prevention && (
+              <Section title="Prevention" body={diagnosis.treatment_advice.prevention} />
+            )}
+          </>
+        )}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Other possibilities</Text>
+          {diagnosis.top_predictions.slice(1).map((p, i) => (
+            <View key={i} style={styles.altRow}>
+              <Text style={styles.altName}>{p.display_name ?? p.class_name}</Text>
+              <Text style={styles.altConf}>{Math.round(p.confidence * 100)}%</Text>
+            </View>
+          ))}
+        </View>
+
+        <TouchableOpacity
+          style={styles.doneBtn}
+          onPress={() => router.replace('/(tabs)')}
+        >
+          <Text style={styles.doneText}>Done</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+}
+
+function Section({ title, body }: { title: string; body: string }) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionBody}>{body}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  image: { width: '100%', height: 280, backgroundColor: '#e2e8f0' },
+  body: { padding: 20 },
+  cropLabel: { fontSize: 13, color: '#64748b', fontWeight: '600' },
+  disease: { fontSize: 22, fontWeight: '800', marginTop: 4 },
+  confidenceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  severityBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
+  severityText: { color: 'white', fontWeight: '700', fontSize: 11, letterSpacing: 0.5 },
+  confidence: { color: '#64748b', fontSize: 13, fontWeight: '600' },
+  section: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#0f172a', marginBottom: 8 },
+  sectionBody: { fontSize: 14, color: '#334155', lineHeight: 20 },
+  actionRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  actionNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#16a34a',
+    color: 'white',
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 24,
+    fontSize: 12,
+  },
+  actionText: { flex: 1, color: '#334155', lineHeight: 20, fontSize: 14 },
+  altRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
+  altName: { color: '#475569', fontSize: 14 },
+  altConf: { color: '#94a3b8', fontWeight: '600', fontSize: 13 },
+  doneBtn: {
+    backgroundColor: '#16a34a',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  doneText: { color: 'white', fontWeight: '700', fontSize: 16 },
+});
