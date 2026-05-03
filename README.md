@@ -143,10 +143,47 @@ agrosense/
 - **Admin dashboard** — Separate JWT issuer (`POST /api/auth/admin/login`) with `is_admin` claim. Endpoints: platform stats (totals, top diseases, healthy %), farmer list, farmer detail with recent diagnoses, all-diagnoses list, **expert review submission** for closing the AI feedback loop.
 - **Twilio SMS gateway** — Inbound webhook (`POST /api/sms/webhook`) auto-creates SMS-only farmer records, classifies intent via Gemini (`diagnosis | price_check | weather | help | other`), dispatches to the right handler, and returns a TwiML reply formatted under 320 chars. Same backend services power the SMS path as the app path — no degraded experience.
 
-### 🔜 Up next
+### ✅ Week 5 — Mobile app (React Native + Expo)
 
-- **Weeks 5–7** — React Native mobile app (camera, diagnosis screens, history, prices, weather)
-- **Week 8** — Deploy to Railway, real user testing, demo, portfolio post
+The most rewarding chapter. Built the entire user-facing app that brings the backend to farmers' phones.
+
+**Foundation:**
+- Expo Router file-based navigation, TypeScript throughout
+- JWT auth via SecureStore (login + register screens), Zustand store, auto-redirect on token expiry
+- Axios client with auth interceptors, React Query for server-state caching
+- Bottom tab navigation: Home, Diagnose, Prices, Weather, History
+
+**Diagnosis flow (camera → backend → result):**
+- Camera + gallery picker via `expo-camera` and `expo-image-picker`
+- Crop selector chips fetched from `/api/crops`
+- Multipart upload to `/api/diagnose` with 60s timeout for full Gemini pipeline
+- Result screen renders predicted disease, confidence pill, severity badge (color-coded), Gemini summary, numbered immediate actions, organic + chemical treatment with Ghana-specific products (Kocide, Ridomil Gold, Dithane), prevention tips, top-3 alternative predictions
+- End-to-end latency: photo → diagnosis displayed in ~10 seconds on device
+
+**History:**
+- `GET /api/diagnoses` lists farmer's past diagnoses with crop, disease, confidence, image thumbnail
+- Pull-to-refresh + auto-refresh on tab focus
+- Tap any card → `app/diagnosis/[id].tsx` dynamic route → full detail screen
+- Backend enriches old plain-text advice with severity heuristic (high/moderate/low) so legacy rows render cleanly
+
+**Prices:**
+- Filter by crop chip, see live prices across 5 Ghanaian markets (Kumasi, Techiman, Makola, Tamale, Kaneshie)
+- Trend arrows (📈 / 📉 / ➡️) with directional color coding
+- GHS pricing displayed per kg
+
+**Weather:**
+- `expo-location` GPS with reverse geocoding ("📍 Kumasi, Ashanti Region")
+- Real-time current conditions (temp, humidity, rain, wind)
+- 7-day horizontal forecast cards with rain volume per day
+- Gemini-generated planting advisory tailored to maize + Ghana, with structured recommendations and warnings ("Sow Monday May 4th to take advantage of upcoming rains")
+- Falls back to Accra coordinates when permission is denied
+
+### 🔜 Week 6+ — Polish & deploy
+
+- UI polish (custom typography, severity badge cards, loading skeletons, micro-animations)
+- Deploy backend to Railway (PostgreSQL + Redis + FastAPI)
+- Build Android APK with EAS, distribute to 5 real farmers
+- Demo video + portfolio post + pitch deck 
 ---
 
 ## 🚀 Running locally
