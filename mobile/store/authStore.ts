@@ -16,12 +16,14 @@ interface AuthState {
   farmer: Farmer | null;
   isLoading: boolean;
   isInitialized: boolean;
+  hasSeenOnboarding: boolean;
 
   // Actions
   initialize: () => Promise<void>;
   login: (phone: string, password: string) => Promise<void>;
   register: (data: RegisterPayload) => Promise<void>;
   logout: () => Promise<void>;
+  markOnboardingSeen: () => Promise<void>;
 }
 
 interface RegisterPayload {
@@ -37,11 +39,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   farmer: null,
   isLoading: false,
   isInitialized: false,
-
+  hasSeenOnboarding: false,
   // Run once at app launch — load token from SecureStore
   initialize: async () => {
     try {
-      const token = await SecureStore.getItemAsync('auth_token');
+      const [token, seen] = await Promise.all([
+        SecureStore.getItemAsync('auth_token'),
+        SecureStore.getItemAsync('onboarding_seen'),
+      ]);
+
+      set({ hasSeenOnboarding: seen === '1' });
+
       if (token) {
         set({ token });
         const response = await apiClient.get<Farmer>('/api/auth/me');
@@ -88,5 +96,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     await SecureStore.deleteItemAsync('auth_token');
     set({ token: null, farmer: null });
+  },
+  markOnboardingSeen: async () => {
+    await SecureStore.setItemAsync('onboarding_seen', '1');
+    set({ hasSeenOnboarding: true });
   },
 }));

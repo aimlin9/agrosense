@@ -178,12 +178,56 @@ The most rewarding chapter. Built the entire user-facing app that brings the bac
 - Gemini-generated planting advisory tailored to maize + Ghana, with structured recommendations and warnings ("Sow Monday May 4th to take advantage of upcoming rains")
 - Falls back to Accra coordinates when permission is denied
 
-### 🔜 Week 6+ — Polish & deploy
+### ✅ Week 6 — UI polish & onboarding
 
-- UI polish (custom typography, severity badge cards, loading skeletons, micro-animations)
-- Deploy backend to Railway (PostgreSQL + Redis + FastAPI)
+Shipped the visual transformation that takes AgroSense from "a developer made this" to "a designer made this."
+
+**Typography & design system:**
+- Inter font family (Regular, Medium, SemiBold, Bold, ExtraBold) loaded via `@expo-google-fonts/inter`
+- Centralized theme tokens in `mobile/constants/theme.ts` — colors, fonts, spacing, radius, shadows
+- Splash screen held until fonts + auth state both ready, no font flash
+
+**Home screen redesign:**
+- Stats row: today's diagnoses, all-time count, current temperature
+- Hero CTA card with shadow + rounded corners
+- Most-recent-diagnosis card (only renders if history exists) with crop, disease, confidence, date — taps through to detail
+- Quick-access shortcuts grid (Prices, Weather, History)
+- Tip card with photography advice
+
+**3-dot anchored dropdown menu (Material 3 pattern):**
+- `MenuSheet.tsx` component using `Modal` + absolute positioning + `measureInWindow` to anchor to trigger
+- Two items: Feedback (opens `mailto:` with pre-filled subject + platform info), Settings (navigates to settings stack)
+- Tap-outside dismissal, no scrim
+
+**Settings screen:**
+- Separate stack route at `app/settings/` with proper back chevron
+- Profile card (avatar, name, phone, region with 📍 emoji)
+- Support section (email link), About section (version via `expo-application`, privacy & terms placeholder)
+- GitHub link gated by `__DEV__` flag — visible in dev/portfolio builds, hidden in production
+- Logout with confirmation alert
+- "Made with 🌱 in Ghana" footer
+
+**Onboarding flow (first-launch only, persisted via SecureStore):**
+- 3-slide horizontal carousel: Diagnose → Plant → Sell
+- Full-bleed Unsplash photography (dewy leaf macro, cornfield, harvested tomatoes)
+- Branded green LinearGradient overlay (transparent at top → 92% green at bottom) keeps text readable on any photo
+- AgroSense brand top-left + Skip top-right floating over the photo with text shadows
+- 32px Inter ExtraBold titles, 15px body copy, animated dot indicator, white CTA button on dark green strip
+- "Get started" on slide 3 → register; "Sign in" link → login; "Skip" → login at any time
+- `markOnboardingSeen()` action persists `onboarding_seen` flag so returning users skip straight to login
+
+**Photo attribution:**
+- `ATTRIBUTIONS.md` at repo root crediting Unsplash photographers, PlantVillage dataset (Hughes & Salathé 2015), MobileNetV2, Inter font, Open-Meteo, and other open source dependencies
+
+### 🔜 Week 7 — Deploy & APK
+
+- Privacy policy + terms of service via Termly
+- Backend deploy to Railway (FastAPI + PostgreSQL + Redis)
 - Build Android APK with EAS, distribute to 5 real farmers
-- Demo video + portfolio post + pitch deck 
+
+### 🔜 Week 8 — Demo & portfolio
+
+- 90-second demo video, portfolio post, pitch deck, LinkedIn launch
 ---
 
 ## 🚀 Running locally
