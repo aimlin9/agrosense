@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 
 import { useAuthStore } from '@/store/authStore';
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -32,6 +33,19 @@ export default function LoginScreen() {
       Alert.alert('Login failed', msg);
     }
   };
+  const handleGoogleSignIn = async () => {
+    try {
+      const { profileComplete } = await useAuthStore.getState().loginWithGoogle();
+      if (!profileComplete) {
+        router.replace('/onboarding/complete-profile');
+      } else {
+        router.replace('/(tabs)');
+      }
+    } catch (err: any) {
+      const msg = err?.code === 'CANCELLED' ? null : err?.message ?? 'Sign-in failed.';
+      if (msg) Alert.alert('Sign-in failed', msg);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -43,6 +57,17 @@ export default function LoginScreen() {
         <Text style={styles.subtitle}>AI crop advisor for your farm</Text>
 
         <View style={styles.form}>
+          <GoogleSignInButton
+            onPress={handleGoogleSignIn}
+            loading={isLoading}
+          />
+
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
           <Text style={styles.label}>Phone number</Text>
           <TextInput
             style={styles.input}
@@ -112,4 +137,21 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20, gap: 6 },
   footerText: { color: '#64748b' },
   link: { color: '#15803d', fontWeight: '700' },
+
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e2e8f0',
+  },
+  dividerText: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
 });

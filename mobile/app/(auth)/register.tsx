@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { useAuthStore } from '@/store/authStore';
 
 export default function RegisterScreen() {
@@ -47,6 +47,19 @@ export default function RegisterScreen() {
       Alert.alert('Registration failed', msg);
     }
   };
+  const handleGoogleSignIn = async () => {
+    try {
+      const { profileComplete } = await useAuthStore.getState().loginWithGoogle();
+      if (!profileComplete) {
+        router.replace('/onboarding/complete-profile');
+      } else {
+        router.replace('/(tabs)');
+      }
+    } catch (err: any) {
+      const msg = err?.code === 'CANCELLED' ? null : err?.message ?? 'Sign-in failed.';
+      if (msg) Alert.alert('Sign-in failed', msg);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -55,6 +68,18 @@ export default function RegisterScreen() {
     >
       <ScrollView contentContainerStyle={styles.inner}>
         <Text style={styles.logo}>Create account</Text>
+
+        <GoogleSignInButton
+          onPress={handleGoogleSignIn}
+          loading={isLoading}
+          label="Sign up with Google"
+        />
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
+        </View>
 
         <Text style={styles.label}>Phone number *</Text>
         <TextInput
@@ -147,4 +172,21 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20, gap: 6 },
   footerText: { color: '#64748b' },
   link: { color: '#15803d', fontWeight: '700' },
+
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e2e8f0',
+  },
+  dividerText: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
 });

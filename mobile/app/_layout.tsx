@@ -14,13 +14,14 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
+import { configureGoogleSignIn } from '@/services/googleAuth';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
-  const { token, isInitialized, initialize, hasSeenOnboarding } = useAuthStore();
+  const { token, isInitialized, initialize, hasSeenOnboarding, farmer } = useAuthStore();
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
   }));
@@ -34,6 +35,7 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    configureGoogleSignIn();
     initialize();
   }, []);
 
@@ -48,9 +50,19 @@ export default function RootLayout() {
 
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboardingGroup = segments[0] === 'onboarding';
+    const onCompleteProfile =
+      inOnboardingGroup && segments[1] === 'complete-profile';
 
-    // Logged in → tabs
-    if (token && (inAuthGroup || inOnboardingGroup)) {
+    // Logged in but profile incomplete → force complete-profile
+    if (token && farmer && farmer.profile_complete === false) {
+      if (!onCompleteProfile) {
+        router.replace('/onboarding/complete-profile');
+      }
+      return;
+    }
+
+    // Logged in & profile complete → tabs (skip auth/onboarding screens)
+    if (token && (inAuthGroup || (inOnboardingGroup && !onCompleteProfile))) {
       router.replace('/(tabs)');
       return;
     }
@@ -67,7 +79,7 @@ export default function RootLayout() {
         router.replace('/(auth)/login');
       }
     }
-  }, [token, isInitialized, fontsLoaded, hasSeenOnboarding, segments]);
+  }, [token, farmer, isInitialized, fontsLoaded, hasSeenOnboarding, segments]);
 
   if (!isInitialized || !fontsLoaded) {
     return (

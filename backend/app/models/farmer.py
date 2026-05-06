@@ -17,20 +17,33 @@ class Farmer(Base):
         default=uuid.uuid4,
     )
 
-    phone_number: Mapped[str] = mapped_column(
-        String(20),
-        unique=True,
-        nullable=False,
-        index=True,
+    phone_number: Mapped[str | None] = mapped_column(
+        String(20), unique=True, nullable=True, index=True
     )
 
     full_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
     email: Mapped[str | None] = mapped_column(
-        String(254), unique=True, nullable=True
+        String(254), unique=True, nullable=True, index=True
     )
 
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
+    # ─── Auth provider tracking ─────────────────────────────────────
+    auth_provider: Mapped[str] = mapped_column(
+        String(20), default="phone", nullable=False
+    )  # 'phone' | 'google' | 'apple' | 'phone+google'
+    google_sub: Mapped[str | None] = mapped_column(
+        String(255), unique=True, nullable=True, index=True
+    )
+    profile_picture_url: Mapped[str | None] = mapped_column(
+        String(500), nullable=True
+    )
+    profile_complete: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
+
+    # ─── Profile ────────────────────────────────────────────────────
     region: Mapped[str | None] = mapped_column(String(100), nullable=True)
     district: Mapped[str | None] = mapped_column(String(100), nullable=True)
 

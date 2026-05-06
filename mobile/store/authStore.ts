@@ -2,13 +2,18 @@ import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 
 import { apiClient } from '@/api/client';
+import { signInWithGoogle, signOutGoogle } from '@/services/googleAuth';
 
 interface Farmer {
   id: string;
-  phone_number: string;
+  phone_number: string | null;
   full_name: string | null;
+  email: string | null;
   region: string | null;
   preferred_language: string;
+  profile_picture_url?: string | null;
+  profile_complete?: boolean;
+  auth_provider?: string;
 }
 
 interface AuthState {
@@ -22,6 +27,7 @@ interface AuthState {
   initialize: () => Promise<void>;
   login: (phone: string, password: string) => Promise<void>;
   register: (data: RegisterPayload) => Promise<void>;
+  loginWithGoogle: () => Promise<{ profileComplete: boolean }>;
   logout: () => Promise<void>;
   markOnboardingSeen: () => Promise<void>;
 }
@@ -40,7 +46,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   isInitialized: false,
   hasSeenOnboarding: false,
-  // Run once at app launch — load token from SecureStore
+
+  // Run once at app launch — load token + onboarding flag from SecureStore
   initialize: async () => {
     try {
       const [token, seen] = await Promise.all([
@@ -93,10 +100,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  loginWithGoogle: async () => {
+    set({ isLoading: true });
+    try {
+      const result = await signInWithGoogle();
+
+      // Store our backend JWT
+      await SecureStore.setItemAsync('auth_token', result.accessToken);
+      set({ token: result.accessToken });
+
+      // Fetch the freshly created/looked-up farmer
+      const meRes = await apiClient.get<Farmer>('/api/auth/me');
+      set({ farmer: meRes.data });
+
+      return { profileComplete: result.profileComplete };
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
   logout: async () => {
+    await signOutGoogle();
     await SecureStore.deleteItemAsync('auth_token');
     set({ token: null, farmer: null });
   },
+
   markOnboardingSeen: async () => {
     await SecureStore.setItemAsync('onboarding_seen', '1');
     set({ hasSeenOnboarding: true });

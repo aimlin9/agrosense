@@ -1,17 +1,20 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "AgroSense",
+    "slug": "agrosense",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "scheme": "agrosense",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.aimlin9.agrosense",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.aimlin9.agrosense",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -40,11 +43,24 @@
         }
       ],
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps._REPLACE_WITH_REVERSED_IOS_CLIENT_ID_"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "googleWebClientId": "870784188058-q70nltsf8ndqd8878q52hs1kds7l8ke2.apps.googleusercontent.com",
+      "router": {},
+      "eas": {
+        "projectId": "da00af8c-4d3c-46f5-ac3d-e667a7727f95"
+      }
     }
   }
 }

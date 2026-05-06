@@ -34,5 +34,9 @@ class Settings(BaseSettings):
     twilio_auth_token: str = ""
     twilio_phone_number: str = ""
 
+# ─── Google Sign-In ─────────────────────────────────
+    google_web_client_id: str = ""
+    google_android_client_id: str = ""
+    google_ios_client_id: str = ""
 
 settings = Settings()
