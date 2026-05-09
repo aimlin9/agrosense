@@ -62,3 +62,6 @@ desktop.ini
 dist/
 build/
 *.egg
+
+# Local backup of Expo template assets (safety net, not tracked)
+mobile/assets/images/.template-backup/
