@@ -22,6 +22,7 @@ from app.schemas.auth import LoginRequest
 from app.services.google_auth_service import GoogleAuthError, verify_google_id_token
 from app.schemas.auth import GoogleAuthRequest, GoogleAuthResponse
 from app.schemas.auth import CompleteProfileRequest
+from fastapi_limiter.depends import RateLimiter
 
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -31,6 +32,7 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
     "/register",
     response_model=FarmerResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RateLimiter(times=5, seconds=60))],
 )
 async def register_farmer(
     payload: FarmerRegisterRequest,
@@ -63,7 +65,7 @@ async def register_farmer(
     return new_farmer
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=TokenResponse, dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def login_farmer(
     payload: LoginRequest,
     db: AsyncSession = Depends(get_db),
@@ -114,7 +116,7 @@ async def admin_login(payload: LoginRequest, db: AsyncSession = Depends(get_db))
     )
     return TokenResponse(access_token=token, token_type="bearer")
 
-@router.post("/google", response_model=GoogleAuthResponse)
+@router.post("/google", response_model=GoogleAuthResponse, dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def google_signin(
     payload: GoogleAuthRequest,
     db: AsyncSession = Depends(get_db),

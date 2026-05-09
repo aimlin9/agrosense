@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, File, UploadFile
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.config import settings
 from app.database import get_db
 from app.routers import auth as auth_router
 from app.services.ml_service import load_model
@@ -14,6 +14,10 @@ from app.routers import weather as weather_router
 from app.routers import admin as admin_router
 from app.routers import sms as sms_router
 from app.routers import crops as crops_router
+# Add to imports near the top
+from fastapi_limiter import FastAPILimiter
+from redis.asyncio import Redis as AsyncRedis
+from app.services.rate_limit import farmer_or_ip_identifier
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,7 +25,11 @@ async def lifespan(app: FastAPI):
     print("[lifespan] Loading ML model...")
     load_model()
     print("[lifespan] Startup complete")
+    # Initialize rate limiter (Redis-backed, shared across workers)
+    redis_client = AsyncRedis.from_url(settings.redis_url, decode_responses=True)
+    await FastAPILimiter.init(redis_client, identifier=farmer_or_ip_identifier)
     yield
+    await FastAPILimiter.close()
     # ── Shutdown ──
     print("[lifespan] Shutting down")
 

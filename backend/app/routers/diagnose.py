@@ -20,12 +20,18 @@ from app.services.gemini_service import generate_treatment_advice
 from app.services.image_service import ImageProcessingError, preprocess_bytes
 from app.services.ml_service import predict
 from app.services.storage_service import upload_image
+from fastapi import Depends
+from fastapi_limiter.depends import RateLimiter
 
 
 router = APIRouter(prefix="/api", tags=["diagnose"])
 
 
-@router.post("/diagnose", response_model=DiagnosisResponse)
+@router.post(
+    "/diagnose",
+    response_model=DiagnosisResponse,  # whatever you have here
+    dependencies=[Depends(RateLimiter(times=10, seconds=60))],
+)
 async def diagnose(
     crop_id: UUID = Form(...),
     file: UploadFile = File(...),
