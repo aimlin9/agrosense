@@ -20,7 +20,11 @@ async def get_current_farmer(
     credentials: HTTPAuthorizationCredentials = Depends(_security),
     db: AsyncSession = Depends(get_db),
 ) -> Farmer:
-    """Resolve the Bearer JWT to a Farmer row."""
+    """Resolve the Bearer JWT to a Farmer row.
+    
+    Rejects tokens whose 'ver' claim doesn't match the farmer's current
+    token_version — this is how we enforce single-session login.
+    """
     try:
         payload = jwt.decode(
             credentials.credentials,
@@ -28,6 +32,7 @@ async def get_current_farmer(
             algorithms=[settings.algorithm],
         )
         farmer_id_str = payload.get("sub")
+        token_version = payload.get("ver", 0)
         if not farmer_id_str:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -48,6 +53,14 @@ async def get_current_farmer(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Farmer not found",
         )
+
+    # Single-session enforcement: token from a previous session is invalid
+    if farmer.token_version != token_version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="session_invalidated",
+        )
+
     return farmer
 
 

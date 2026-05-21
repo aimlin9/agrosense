@@ -8,8 +8,7 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// CHANGE THIS to match your network setup. See instructions below.
-export const BASE_URL = 'http://192.168.100.5:8000';
+export const BASE_URL = 'http://192.168.100.12:8000';
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -26,12 +25,29 @@ apiClient.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Log non-2xx responses for easier debugging
+// ─── Session invalidation hook ──────────────────────────────────────
+// The auth store registers a handler here at startup. When the backend
+// returns 401 with detail "session_invalidated", we call the handler so
+// the store can clear local state and show a banner. This indirection
+// avoids a circular import between client.ts and authStore.ts.
+let sessionInvalidationHandler: (() => void) | null = null;
+
+export function registerSessionInvalidationHandler(handler: () => void) {
+  sessionInvalidationHandler = handler;
+}
+
+// Log non-2xx responses for easier debugging + handle session invalidation
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
-      console.warn('[API]', error.response.status, error.config?.url, error.response.data);
+      const { status, data, config } = error.response;
+      console.warn('[API]', status, config?.url, data);
+
+      // Backend signals a stale session — kick the user out gracefully
+      if (status === 401 && data?.detail === 'session_invalidated') {
+        sessionInvalidationHandler?.();
+      }
     } else {
       console.warn('[API] network error:', error.message, error.config?.url);
     }

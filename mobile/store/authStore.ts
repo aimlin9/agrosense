@@ -1,7 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
+import { Alert } from 'react-native';
 import { create } from 'zustand';
 
-import { apiClient } from '@/api/client';
+import { apiClient, registerSessionInvalidationHandler } from '@/api/client';
 import { signInWithGoogle, signOutGoogle } from '@/services/googleAuth';
 
 interface Farmer {
@@ -29,6 +30,7 @@ interface AuthState {
   register: (data: RegisterPayload) => Promise<void>;
   loginWithGoogle: () => Promise<{ profileComplete: boolean }>;
   logout: () => Promise<void>;
+  sessionInvalidated: () => Promise<void>;
   markOnboardingSeen: () => Promise<void>;
 }
 
@@ -125,8 +127,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ token: null, farmer: null });
   },
 
+  // Triggered when the backend tells us our token is from a stale session
+  // (i.e. the user signed in on another device). Clears state and warns the user.
+  sessionInvalidated: async () => {
+    try {
+      await SecureStore.deleteItemAsync('auth_token');
+    } catch {
+      // ignore
+    }
+    set({ token: null, farmer: null });
+    // Brief friendly alert. RN's Alert.alert is safe to call outside components.
+    Alert.alert(
+      'Signed out',
+      'You were signed in on another device. Please sign in again to continue here.',
+      [{ text: 'OK' }],
+    );
+  },
+
   markOnboardingSeen: async () => {
     await SecureStore.setItemAsync('onboarding_seen', '1');
     set({ hasSeenOnboarding: true });
   },
 }));
+
+// Wire the api client interceptor to call sessionInvalidated() when it sees
+// a 401 with detail "session_invalidated". This avoids circular imports —
+// the client module exposes a registration function; we register here.
+registerSessionInvalidationHandler(() => {
+  useAuthStore.getState().sessionInvalidated();
+});

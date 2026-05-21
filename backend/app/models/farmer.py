@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, String
+from sqlalchemy import Boolean, DateTime, Float, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -41,6 +41,14 @@ class Farmer(Base):
     )
     profile_complete: Mapped[bool] = mapped_column(
         Boolean, default=True, nullable=False
+    )
+
+    # ─── Single-session enforcement ─────────────────────────────────
+    # Incremented on every successful login. Issued JWTs embed this value
+    # as a "ver" claim. If the claim doesn't match the current DB value,
+    # the token is rejected as belonging to a stale session.
+    token_version: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False
     )
 
     # ─── Profile ────────────────────────────────────────────────────

@@ -22,10 +22,26 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(subject: str, extra_claims: dict | None = None) -> str:
-    """Create a JWT for the given subject (farmer or admin id)."""
+def create_access_token(
+    subject: str,
+    extra_claims: dict | None = None,
+    token_version: int = 0,
+) -> str:
+    """Create a JWT for the given subject (farmer or admin id).
+    
+    Args:
+        subject: the farmer or admin id (UUID as string)
+        extra_claims: additional claims to embed (e.g. {"is_admin": True})
+        token_version: farmer's current token_version for single-session enforcement;
+            ignored for admin tokens (admins don't use this mechanism)
+    """
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
-    payload = {"sub": subject, "exp": expire, "iat": datetime.now(timezone.utc)}
+    payload = {
+        "sub": subject,
+        "exp": expire,
+        "iat": datetime.now(timezone.utc),
+        "ver": token_version,
+    }
     if extra_claims:
         payload.update(extra_claims)
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
