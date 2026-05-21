@@ -8,12 +8,41 @@
  *   4. Send idToken to our backend → receive AgroSense JWT
  *   5. If profile_complete=false, mobile redirects to "Complete profile" screen
  */
-import {
-  GoogleSignin,
-  isSuccessResponse,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
+
+// Detect if running in Expo Go (where the native Google Sign-In module is unavailable)
+const isExpoGo = Constants.appOwnership === 'expo';
+
+// Lazy-load the native module only when not in Expo Go
+let GoogleSignin: any;
+let isSuccessResponse: (response: any) => boolean;
+let statusCodes: any;
+
+if (!isExpoGo) {
+  // Dev build or production — load the real native module
+  const mod = require('@react-native-google-signin/google-signin');
+  GoogleSignin = mod.GoogleSignin;
+  isSuccessResponse = mod.isSuccessResponse;
+  statusCodes = mod.statusCodes;
+} else {
+  // Expo Go — stub everything so the app loads, but Google Sign-In won't actually work
+  GoogleSignin = {
+    configure: () => {},
+    hasPlayServices: async () => false,
+    signIn: async () => {
+      throw new Error('Google Sign-In requires a development build, not Expo Go');
+    },
+    signOut: async () => {},
+    revokeAccess: async () => {},
+  };
+  isSuccessResponse = () => false;
+  statusCodes = {
+    SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED',
+    IN_PROGRESS: 'IN_PROGRESS',
+    PLAY_SERVICES_NOT_AVAILABLE: 'PLAY_SERVICES_NOT_AVAILABLE',
+    SIGN_IN_REQUIRED: 'SIGN_IN_REQUIRED',
+  };
+}
 
 import { apiClient } from '@/api/client';
 
