@@ -63,3 +63,18 @@ class CompleteProfileRequest(BaseModel):
     region: str | None = None
     primary_crop: str | None = None
     full_name: str | None = None  # in case Google didn't provide it
+    
+class UpdateProfileRequest(BaseModel):
+    """Editable profile fields. All optional — only provided fields are updated.
+
+    Phone number and password are intentionally excluded — phone is the auth
+    credential and password changes belong to a separate flow.
+    """
+    full_name: Optional[str] = Field(None, min_length=1, max_length=200)
+    email: Optional[str] = None
+    region: Optional[str] = Field(None, max_length=100)
+    district: Optional[str] = Field(None, max_length=100)
+    primary_crop: Optional[str] = Field(None, max_length=100)
+    preferred_language: Optional[str] = Field(None, pattern="^(en|tw|ha)$")
+    gps_lat: Optional[float] = Field(None, ge=-90, le=90)
+    gps_lng: Optional[float] = Field(None, ge=-180, le=180)

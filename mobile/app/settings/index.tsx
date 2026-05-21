@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import * as Application from 'expo-application';
 import { Stack, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import {
+  ActivityIndicator,
   Alert,
   Linking,
   Platform,
@@ -12,16 +14,20 @@ import {
   View,
 } from 'react-native';
 
+import { apiClient } from '@/api/client';
 import { colors, fonts, radius, shadows, spacing } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
 
-const SHOW_GITHUB = __DEV__; // shows in dev/portfolio builds, hides in production
+const SHOW_GITHUB = __DEV__; // dev/portfolio builds only
 const SUPPORT_EMAIL = 'oramsey609@gmail.com';
 const GITHUB_URL = 'https://github.com/aimlin9/agrosense';
+const PRIVACY_URL = 'https://aimlin9.github.io/agrosense/legal/privacy.html';
+const TERMS_URL = 'https://aimlin9.github.io/agrosense/legal/terms.html';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { farmer, logout } = useAuthStore();
+  const [deleting, setDeleting] = useState(false);
 
   const handleFeedback = async () => {
     const subject = encodeURIComponent('AgroSense feedback');
@@ -31,16 +37,15 @@ export default function SettingsScreen() {
     const url = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
     const can = await Linking.canOpenURL(url);
     if (!can) {
-      Alert.alert(
-        'No email app',
-        `Please send your feedback to ${SUPPORT_EMAIL}`,
-      );
+      Alert.alert('No email app', `Please send your feedback to ${SUPPORT_EMAIL}`);
       return;
     }
     Linking.openURL(url);
   };
 
   const handleGithub = () => Linking.openURL(GITHUB_URL);
+  const handlePrivacy = () => Linking.openURL(PRIVACY_URL);
+  const handleTerms = () => Linking.openURL(TERMS_URL);
 
   const handleLogout = () => {
     Alert.alert('Log out', 'Are you sure you want to log out?', [
@@ -49,27 +54,61 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete account permanently?',
+      'Your account, diagnosis history, farm plots, and all photos will be permanently deleted. This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete forever',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await apiClient.delete('/api/auth/me');
+              // logout() clears local state and redirects to the auth flow
+              logout();
+            } catch (err: any) {
+              const msg =
+                err?.response?.data?.detail ??
+                'Failed to delete account. Please check your connection and try again.';
+              Alert.alert('Error', msg);
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <>
       <Stack.Screen options={{ title: 'Settings' }} />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* Account */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Feather name="user" color={colors.primaryDark} size={32} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.profileName} numberOfLines={1}>
-              {farmer?.full_name || 'Farmer'}
-            </Text>
-            <Text style={styles.profilePhone}>{farmer?.phone_number}</Text>
-            {farmer?.region && (
-              <Text style={styles.profileMeta} numberOfLines={1}>
-                📍 {farmer.region}
-              </Text>
-            )}
-          </View>
-        </View>
+        {/* Profile */}
+        {/* Profile — tap to edit */}
+<TouchableOpacity
+  style={styles.profileCard}
+  onPress={() => router.push('/settings/edit-profile')}
+  activeOpacity={0.7}
+>
+  <View style={styles.avatar}>
+    <Feather name="user" color={colors.primaryDark} size={32} />
+  </View>
+  <View style={{ flex: 1 }}>
+    <Text style={styles.profileName} numberOfLines={1}>
+      {farmer?.full_name || 'Farmer'}
+    </Text>
+    <Text style={styles.profilePhone}>{farmer?.phone_number}</Text>
+    {farmer?.region && (
+      <Text style={styles.profileMeta} numberOfLines={1}>
+        📍 {farmer.region}
+      </Text>
+    )}
+  </View>
+  <Feather name="chevron-right" color={colors.textMuted} size={20} />
+</TouchableOpacity>
 
         {/* Support */}
         <SectionHeader title="Support" />
@@ -105,14 +144,20 @@ export default function SettingsScreen() {
           <Divider />
           <Row
             icon={<Feather name="shield" color={colors.primary} size={20} />}
-            label="Privacy & terms"
-            sub="Coming soon"
-            chevron={false}
-            onPress={() => Alert.alert('Coming soon', 'Privacy policy will be available before public release.')}
+            label="Privacy Policy"
+            sub="How we handle your data"
+            onPress={handlePrivacy}
+          />
+          <Divider />
+          <Row
+            icon={<Feather name="file-text" color={colors.primary} size={20} />}
+            label="Terms of Service"
+            sub="Rules for using AgroSense"
+            onPress={handleTerms}
           />
         </View>
 
-        {/* Sign out */}
+        {/* Account — Log out */}
         <SectionHeader title="Account" />
         <TouchableOpacity
           style={styles.logoutBtn}
@@ -123,9 +168,28 @@ export default function SettingsScreen() {
           <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
 
-        <Text style={styles.footer}>
-          Made with 🌱 in Ghana
+        {/* Danger Zone — Delete Account */}
+        <SectionHeader title="Danger Zone" />
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={handleDeleteAccount}
+          activeOpacity={0.7}
+          disabled={deleting}
+        >
+          {deleting ? (
+            <ActivityIndicator color={colors.severityHigh} size="small" />
+          ) : (
+            <Feather name="trash-2" color={colors.severityHigh} size={18} />
+          )}
+          <Text style={styles.deleteText}>
+            {deleting ? 'Deleting…' : 'Delete account'}
+          </Text>
+        </TouchableOpacity>
+        <Text style={styles.deleteHint}>
+          Permanently removes your account, diagnosis history, plots, and photos.
         </Text>
+
+        <Text style={styles.footer}>Made with 🌱 in Ghana</Text>
       </ScrollView>
     </>
   );
@@ -160,7 +224,9 @@ function Row({
         <Text style={styles.rowLabel}>{label}</Text>
         {sub && <Text style={styles.rowSub}>{sub}</Text>}
       </View>
-      {chevron && onPress && <Feather name="chevron-right" color={colors.textMuted} size={18} />}
+      {chevron && onPress && (
+        <Feather name="chevron-right" color={colors.textMuted} size={18} />
+      )}
     </TouchableOpacity>
   );
 }
@@ -271,6 +337,30 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fonts.bold,
     color: colors.severityHigh,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(220, 38, 38, 0.25)',
+    gap: spacing.sm,
+  },
+  deleteText: {
+    fontSize: 15,
+    fontFamily: fonts.bold,
+    color: colors.severityHigh,
+  },
+  deleteHint: {
+    fontSize: 11,
+    fontFamily: fonts.regular,
+    color: colors.textTertiary,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.md,
   },
   footer: {
     textAlign: 'center',

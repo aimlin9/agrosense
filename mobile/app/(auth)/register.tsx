@@ -1,8 +1,10 @@
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
+import { Feather } from '@expo/vector-icons';
 import {
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -14,6 +16,21 @@ import {
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { useAuthStore } from '@/store/authStore';
 
+const GHANA_REGIONS = [
+  'Ahafo', 'Ashanti', 'Bono', 'Bono East', 'Central', 'Eastern',
+  'Greater Accra', 'North East', 'Northern', 'Oti', 'Savannah',
+  'Upper East', 'Upper West', 'Volta', 'Western', 'Western North',
+];
+
+const CROPS = [
+  'Apple', 'Blueberry', 'Cherry (including sour)', 'Corn (maize)',
+  'Grape', 'Orange', 'Peach', 'Pepper, bell', 'Potato', 'Raspberry',
+  'Soybean', 'Squash', 'Strawberry', 'Tomato',
+];
+
+const PRIVACY_URL = 'https://aimlin9.github.io/agrosense/legal/privacy.html';
+const TERMS_URL = 'https://aimlin9.github.io/agrosense/legal/terms.html';
+
 export default function RegisterScreen() {
   const router = useRouter();
   const { register, isLoading } = useAuthStore();
@@ -23,6 +40,22 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [region, setRegion] = useState('');
   const [primaryCrop, setPrimaryCrop] = useState('');
+
+  const pickFromList = (
+    title: string,
+    options: string[],
+    onSelect: (value: string) => void,
+  ) => {
+    Alert.alert(
+      title,
+      undefined,
+      [
+        ...options.map((opt) => ({ text: opt, onPress: () => onSelect(opt) })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ],
+      { cancelable: true },
+    );
+  };
 
   const handleRegister = async () => {
     if (!phone || !password) {
@@ -47,6 +80,7 @@ export default function RegisterScreen() {
       Alert.alert('Registration failed', msg);
     }
   };
+
   const handleGoogleSignIn = async () => {
     try {
       const { profileComplete } = await useAuthStore.getState().loginWithGoogle();
@@ -109,20 +143,32 @@ export default function RegisterScreen() {
         />
 
         <Text style={styles.label}>Region</Text>
-        <TextInput
+        <TouchableOpacity
           style={styles.input}
-          placeholder="Ashanti, Greater Accra, etc."
-          value={region}
-          onChangeText={setRegion}
-        />
+          onPress={() => pickFromList('Choose your region', GHANA_REGIONS, setRegion)}
+          activeOpacity={0.6}
+        >
+          <View style={styles.pickerRow}>
+            <Text style={[styles.pickerText, !region && styles.pickerPlaceholder]}>
+              {region || 'Tap to choose'}
+            </Text>
+            <Feather name="chevron-down" color="#94a3b8" size={18} />
+          </View>
+        </TouchableOpacity>
 
         <Text style={styles.label}>Primary crop</Text>
-        <TextInput
+        <TouchableOpacity
           style={styles.input}
-          placeholder="Maize, Tomato, Cassava"
-          value={primaryCrop}
-          onChangeText={setPrimaryCrop}
-        />
+          onPress={() => pickFromList('Choose your primary crop', CROPS, setPrimaryCrop)}
+          activeOpacity={0.6}
+        >
+          <View style={styles.pickerRow}>
+            <Text style={[styles.pickerText, !primaryCrop && styles.pickerPlaceholder]}>
+              {primaryCrop || 'Tap to choose'}
+            </Text>
+            <Feather name="chevron-down" color="#94a3b8" size={18} />
+          </View>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.button, isLoading && styles.buttonDisabled]}
@@ -140,6 +186,24 @@ export default function RegisterScreen() {
             Sign in
           </Link>
         </View>
+
+        <Text style={styles.disclaimer}>
+          By continuing, you agree to our{' '}
+          <Text
+            style={styles.disclaimerLink}
+            onPress={() => Linking.openURL(PRIVACY_URL)}
+          >
+            Privacy Policy
+          </Text>
+          {' '}and{' '}
+          <Text
+            style={styles.disclaimerLink}
+            onPress={() => Linking.openURL(TERMS_URL)}
+          >
+            Terms of Service
+          </Text>
+          .
+        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -159,6 +223,21 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     marginTop: 4,
+    minHeight: 46,
+    justifyContent: 'center',
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pickerText: {
+    fontSize: 16,
+    color: '#0f172a',
+    flex: 1,
+  },
+  pickerPlaceholder: {
+    color: '#94a3b8',
   },
   button: {
     backgroundColor: '#16a34a',
@@ -172,7 +251,6 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20, gap: 6 },
   footerText: { color: '#64748b' },
   link: { color: '#15803d', fontWeight: '700' },
-
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -188,5 +266,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#94a3b8',
     fontWeight: '600',
+  },
+  disclaimer: {
+    fontSize: 12,
+    color: '#64748b',
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 8,
+    lineHeight: 18,
+    paddingHorizontal: 16,
+  },
+  disclaimerLink: {
+    color: '#15803d',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

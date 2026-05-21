@@ -75,3 +75,41 @@ def upload_image(
     public_url = f"{settings.r2_public_url.rstrip('/')}/{object_key}"
     
     return object_key, public_url
+
+
+def delete_object_by_url(url: str) -> bool:
+    """Delete an object from R2 given its public URL.
+    
+    Best-effort cleanup: never throws. Returns True if the deletion succeeded,
+    False if the URL is invalid or R2 rejected the request. Used during account
+    deletion and diagnosis deletion to remove photos.
+    
+    Args:
+        url: full public URL of the object (e.g. https://pub-xyz.r2.dev/diagnoses/abc.jpg)
+    
+    Returns:
+        True on success, False otherwise.
+    """
+    if not url:
+        return False
+    
+    # The URL must start with our configured public prefix, else we have no idea
+    # what bucket/key it points to.
+    public_prefix = settings.r2_public_url.rstrip("/") + "/"
+    if not url.startswith(public_prefix):
+        return False
+    
+    object_key = url[len(public_prefix):]
+    if not object_key:
+        return False
+    
+    try:
+        _r2_client.delete_object(
+            Bucket=settings.r2_bucket_name,
+            Key=object_key,
+        )
+        return True
+    except Exception:
+        # Swallow errors — this is best-effort, and we're typically called
+        # during account teardown where partial failure is acceptable.
+        return False

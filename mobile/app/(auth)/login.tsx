@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -13,6 +14,9 @@ import {
 
 import { useAuthStore } from '@/store/authStore';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+
+const PRIVACY_URL = 'https://aimlin9.github.io/agrosense/legal/privacy.html';
+const TERMS_URL = 'https://aimlin9.github.io/agrosense/legal/terms.html';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -33,6 +37,7 @@ export default function LoginScreen() {
       Alert.alert('Login failed', msg);
     }
   };
+
   const handleGoogleSignIn = async () => {
     try {
       const { profileComplete } = await useAuthStore.getState().loginWithGoogle();
@@ -103,6 +108,24 @@ export default function LoginScreen() {
               Create an account
             </Link>
           </View>
+
+          <Text style={styles.disclaimer}>
+            By continuing, you agree to our{' '}
+            <Text
+              style={styles.disclaimerLink}
+              onPress={() => Linking.openURL(PRIVACY_URL)}
+            >
+              Privacy Policy
+            </Text>
+            {' '}and{' '}
+            <Text
+              style={styles.disclaimerLink}
+              onPress={() => Linking.openURL(TERMS_URL)}
+            >
+              Terms of Service
+            </Text>
+            .
+          </Text>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -153,5 +176,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#94a3b8',
     fontWeight: '600',
+  },
+  disclaimer: {
+    fontSize: 12,
+    color: '#64748b',
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 8,
+    lineHeight: 18,
+    paddingHorizontal: 16,
+  },
+  disclaimerLink: {
+    color: '#15803d',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
