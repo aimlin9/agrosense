@@ -8,7 +8,7 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-export const BASE_URL = 'http://192.168.100.12:8000';
+export const BASE_URL = 'https://agrosense-g0sb.onrender.com';
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
