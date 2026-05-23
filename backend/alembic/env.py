@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -8,6 +9,15 @@ from alembic import context
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# If DATABASE_URL is set in the environment, prefer it over the hardcoded
+# alembic.ini value. This lets us run migrations against any environment
+# (local, Supabase, etc.) without editing committed files.
+# Alembic runs migrations synchronously, so swap the async driver for psycopg2.
+_env_db_url = os.environ.get("DATABASE_URL")
+if _env_db_url:
+    _sync_url = _env_db_url.replace("+asyncpg", "+psycopg2")
+    config.set_main_option("sqlalchemy.url", _sync_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -35,7 +45,6 @@ def run_migrations_offline() -> None:
 
     Calls to context.execute() here emit the given string to the
     script output.
-
     """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
@@ -54,7 +63,6 @@ def run_migrations_online() -> None:
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
-
     """
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
