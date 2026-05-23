@@ -2,6 +2,7 @@
 
 POST /api/diagnose: farmer uploads photo + crop_id → full pipeline → diagnosis.
 """
+import json
 import time
 from uuid import UUID
 
@@ -97,7 +98,7 @@ async def diagnose(
         confidence_score=top["confidence"],
         all_predictions=predictions,
         is_healthy=is_healthy,
-        treatment_advice=advice_dict if advice_dict else None,
+        treatment_advice=json.dumps(advice_dict) if advice_dict else None,
         channel="app",
         status="completed",
         processing_time_ms=elapsed_ms,
