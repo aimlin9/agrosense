@@ -30,7 +30,7 @@ router = APIRouter(prefix="/api", tags=["diagnose"])
 
 @router.post(
     "/diagnose",
-    response_model=DiagnosisResponse,  # whatever you have here
+    response_model=DiagnosisResponse,
     dependencies=[Depends(RateLimiter(times=10, seconds=60))],
 )
 async def diagnose(
@@ -61,21 +61,46 @@ async def diagnose(
         prefix="diagnoses",
     )
 
-    # 4. Run inference
-    predictions = predict(tensor, top_k=3)
+    # 4. Run inference — request the FULL distribution (model has 38 classes)
+    #    so we can filter it down to the crop the farmer actually selected.
+    all_preds = predict(tensor, top_k=38)
+
+    # 5. Crop-aware filtering.
+    #    The `diseases` table maps every model class -> a crop, so it is the
+    #    authoritative class->crop mapping. Pull this crop's disease rows once.
+    crop_disease_rows = (
+        await db.execute(select(Disease).where(Disease.crop_id == crop.id))
+    ).scalars().all()
+    disease_by_class = {d.model_class_name: d for d in crop_disease_rows}
+
+    # Keep only predictions whose class belongs to the selected crop.
+    filtered = [p for p in all_preds if p["class_name"] in disease_by_class]
+
+    if filtered:
+        # Normal path: the model knows this crop. Diagnosis stays within it.
+        predictions = filtered[:3]
+    else:
+        # Fallback: this crop isn't in the model at all (e.g. Cassava, which
+        # isn't part of PlantVillage). Degrade to the unfiltered top-3 so the
+        # request still succeeds instead of erroring on the farmer.
+        predictions = all_preds[:3]
+
     top = predictions[0]
 
-    # 5. Look up Disease record by model_class_name
-    disease = (
-        await db.execute(
-            select(Disease).where(Disease.model_class_name == top["class_name"])
-        )
-    ).scalar_one_or_none()
+    # 6. Resolve the Disease record for the top prediction.
+    disease = disease_by_class.get(top["class_name"])
+    if disease is None:
+        # Only happens on the fallback path — look the class up directly.
+        disease = (
+            await db.execute(
+                select(Disease).where(Disease.model_class_name == top["class_name"])
+            )
+        ).scalar_one_or_none()
 
     is_healthy = "healthy" in top["class_name"].lower()
     display_disease = disease.display_name if disease else top["class_name"]
 
-    # 6. Get treatment advice from Gemini (skip if healthy)
+    # 7. Get treatment advice from Gemini (skip if healthy)
     advice_dict = None
     if not is_healthy:
         try:
@@ -88,7 +113,7 @@ async def diagnose(
             # Don't fail the whole request if Gemini hiccups
             print(f"[diagnose] Gemini failed: {e}")
 
-    # 7. Save Diagnosis row
+    # 8. Save Diagnosis row
     elapsed_ms = int((time.perf_counter() - started) * 1000)
     diagnosis_row = Diagnosis(
         farmer_id=farmer.id,
@@ -107,15 +132,17 @@ async def diagnose(
     await db.commit()
     await db.refresh(diagnosis_row)
 
-    # 8. Build response
-    top_items = [
-        PredictionItem(
-            class_name=p["class_name"],
-            display_name=disease.display_name if disease and p == top else None,
-            confidence=p["confidence"],
+    # 9. Build response — every prediction gets its human-readable name
+    top_items = []
+    for p in predictions:
+        d = disease_by_class.get(p["class_name"])
+        top_items.append(
+            PredictionItem(
+                class_name=p["class_name"],
+                display_name=d.display_name if d else None,
+                confidence=p["confidence"],
+            )
         )
-        for p in predictions
-    ]
 
     return DiagnosisResponse(
         id=diagnosis_row.id,
