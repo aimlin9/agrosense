@@ -40,6 +40,13 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+@app.api_route("/health", methods=["GET", "HEAD"])
+async def health(db: AsyncSession = Depends(get_db)):
+    """Health check that touches Supabase to keep the free-tier
+    project warm. Responds to HEAD so UptimeRobot's default ping
+    registers a 200 (not the 405 we were seeing on /)."""
+    await db.execute(text("SELECT 1"))
+    return {"status": "ok"}
 
 
 # ─── Routers ─────────────────────────────────────────
