@@ -17,6 +17,42 @@ import { apiClient } from '@/api/client';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
 
+const GHANA_REGIONS = [
+  'Ahafo',
+  'Ashanti',
+  'Bono',
+  'Bono East',
+  'Central',
+  'Eastern',
+  'Greater Accra',
+  'North East',
+  'Northern',
+  'Oti',
+  'Savannah',
+  'Upper East',
+  'Upper West',
+  'Volta',
+  'Western',
+  'Western North',
+];
+
+const CROPS = [
+  'Maize',
+  'Tomato',
+  'Cassava',
+  'Pepper (bell)',
+  'Potato',
+  'Plantain',
+  'Cocoa',
+  'Yam',
+  'Rice',
+  'Cowpea',
+  'Groundnut',
+  'Onion',
+  'Pineapple',
+  'Banana',
+];
+
 export default function CompleteProfileScreen() {
   const router = useRouter();
   const { farmer } = useAuthStore();
@@ -27,6 +63,34 @@ export default function CompleteProfileScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const firstName = farmer?.full_name?.split(' ')[0] ?? 'there';
+
+  const pickRegion = () => {
+    Alert.alert(
+      'Select region',
+      'Choose your region in Ghana',
+      [
+        ...GHANA_REGIONS.map(r => ({
+          text: r,
+          onPress: () => setRegion(r),
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ],
+    );
+  };
+
+  const pickCrop = () => {
+    Alert.alert(
+      'Select primary crop',
+      'What is the main crop you grow?',
+      [
+        ...CROPS.map(c => ({
+          text: c,
+          onPress: () => setPrimaryCrop(c),
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ],
+    );
+  };
 
   const handleSubmit = async () => {
     if (!phone.trim()) {
@@ -40,7 +104,6 @@ export default function CompleteProfileScreen() {
         region: region.trim() || undefined,
         primary_crop: primaryCrop.trim() || undefined,
       });
-      // Refresh farmer data
       const meRes = await apiClient.get('/api/auth/me');
       useAuthStore.setState({ farmer: meRes.data });
       router.replace('/(tabs)');
@@ -82,20 +145,24 @@ export default function CompleteProfileScreen() {
           </Text>
 
           <Text style={styles.label}>Region</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ashanti, Greater Accra, Northern…"
-            value={region}
-            onChangeText={setRegion}
-          />
+          <TouchableOpacity style={styles.input} onPress={pickRegion} activeOpacity={0.7}>
+            <View style={styles.pickerRow}>
+              <Text style={[styles.pickerText, !region && styles.pickerPlaceholder]}>
+                {region || 'Tap to choose'}
+              </Text>
+              <Feather name="chevron-down" size={18} color={colors.textTertiary} />
+            </View>
+          </TouchableOpacity>
 
           <Text style={styles.label}>Primary crop</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Maize, Tomato, Cassava…"
-            value={primaryCrop}
-            onChangeText={setPrimaryCrop}
-          />
+          <TouchableOpacity style={styles.input} onPress={pickCrop} activeOpacity={0.7}>
+            <View style={styles.pickerRow}>
+              <Text style={[styles.pickerText, !primaryCrop && styles.pickerPlaceholder]}>
+                {primaryCrop || 'Tap to choose'}
+              </Text>
+              <Feather name="chevron-down" size={18} color={colors.textTertiary} />
+            </View>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.button, submitting && styles.buttonDisabled]}
@@ -157,6 +224,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.regular,
     color: colors.textPrimary,
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pickerText: {
+    fontSize: 16,
+    fontFamily: fonts.regular,
+    color: colors.textPrimary,
+  },
+  pickerPlaceholder: {
+    color: colors.textTertiary,
   },
   helper: {
     fontSize: 12,

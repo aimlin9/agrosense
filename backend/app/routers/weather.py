@@ -1,4 +1,5 @@
 """Weather endpoints — forecast and Gemini-powered advisory."""
+import traceback
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.models.farmer import Farmer
@@ -95,6 +96,8 @@ async def get_advisory(
     try:
         data = await get_forecast(lat, lng)
     except Exception as e:
+        print(f"[weather] get_forecast failed: {e!r}", flush=True)
+        traceback.print_exc()
         raise HTTPException(
             status.HTTP_502_BAD_GATEWAY,
             detail=f"Weather service unavailable: {e}",
