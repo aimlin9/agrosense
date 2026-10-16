@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 10080
 
+    # Keep indicative market prices current (startup + every 12 hours).
+    # Turn off once a live price feed writes real prices.
+    auto_indicative_prices: bool = True
+
     # ─── Uploads ───────────────────────────────────────────
     max_upload_mb: int = 10
 

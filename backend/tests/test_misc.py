@@ -74,3 +74,13 @@ async def test_disease_guide(client):
     one = (await client.get("/api/library/tomato-late-blight")).json()
     assert one["pathogen"] == "Phytophthora infestans" and one["symptoms"]
     assert (await client.get("/api/library/nope")).status_code == 404
+
+
+async def test_price_top_up_fills_gaps_and_is_idempotent(client):
+    from app.services.price_feed import top_up_prices
+    added = await top_up_prices(AsyncSessionLocal, backfill_days=10)
+    assert added > 0
+    assert await top_up_prices(AsyncSessionLocal) == 0  # nothing missing now
+    rows = (await client.get("/api/prices/latest")).json()
+    newest = max(r["recorded_at"] for r in rows)[:10]
+    assert newest == datetime.now(timezone.utc).date().isoformat()

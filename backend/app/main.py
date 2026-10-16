@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 import uuid
@@ -11,7 +12,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.database import engine, get_db
+from app.database import AsyncSessionLocal, engine, get_db
 from app.routers import admin as admin_router
 from app.routers import auth as auth_router
 from app.routers import crops as crops_router
@@ -20,7 +21,7 @@ from app.routers import plots as plots_router
 from app.routers import prices as prices_router
 from app.routers import sms as sms_router
 from app.routers import weather as weather_router
-from app.services import redis_client
+from app.services import price_feed, redis_client
 from app.services.ml_service import is_loaded, load_model
 
 logging.basicConfig(
@@ -38,8 +39,13 @@ async def lifespan(app: FastAPI):
     load_model()
     if not await redis_client.ping():
         logger.warning("Redis unreachable at startup — caching and rate limits will degrade gracefully.")
+    price_task = None
+    if settings.auto_indicative_prices:
+        price_task = asyncio.create_task(price_feed.run_forever(AsyncSessionLocal))
     logger.info("Startup complete")
     yield
+    if price_task:
+        price_task.cancel()
     await redis_client.close()
     await engine.dispose()
     logger.info("Shut down")

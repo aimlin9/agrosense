@@ -21,6 +21,7 @@ os.environ.update(
     R2_ENDPOINT_URL="",
     TWILIO_AUTH_TOKEN="",
     GOOGLE_WEB_CLIENT_ID="",
+    AUTO_INDICATIVE_PRICES="false",
 )
 
 import httpx  # noqa: E402
