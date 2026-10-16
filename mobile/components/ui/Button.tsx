@@ -6,7 +6,7 @@ import { ActivityIndicator, Animated, Pressable, StyleProp, StyleSheet, View, Vi
 import { Text } from '@/components/ui/Text';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'inverse';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'ghostInverse' | 'danger' | 'inverse';
 
 interface Props {
   label: string;
@@ -27,6 +27,7 @@ const palette: Record<Variant, { bg: string; fg: string; border: string }> = {
   primary: { bg: colors.brand, fg: colors.white, border: colors.brand },
   secondary: { bg: colors.surface, fg: colors.ink, border: colors.hairlineStrong },
   ghost: { bg: 'transparent', fg: colors.brand, border: 'transparent' },
+  ghostInverse: { bg: 'transparent', fg: colors.white, border: 'transparent' },
   danger: { bg: colors.surface, fg: colors.danger, border: colors.dangerTint },
   inverse: { bg: colors.white, fg: colors.brandDeep, border: colors.white },
 };

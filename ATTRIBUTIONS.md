@@ -25,3 +25,7 @@ All photos used in the AgroSense onboarding flow are from Unsplash and used unde
 - **Open-Meteo** — weather data, free for non-commercial use under [their terms](https://open-meteo.com/en/terms)
 - **Google Gemini API** — generative AI for treatment advice
 - **Twilio** — SMS gateway
+## Website & app imagery
+
+- **Tomato late blight photos** used for the app screenshots on the website — Wikimedia Commons, released under CC0 (public domain): "Tomato late blight leaf sporulating lesions 1" and "Toomato late blight leaf curling".
+- App screenshots are captured from AgroSense itself.

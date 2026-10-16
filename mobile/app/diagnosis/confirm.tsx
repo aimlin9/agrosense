@@ -128,7 +128,7 @@ export default function ConfirmScreen() {
               A sharp, close photo of one leaf gives the best result.
             </Text>
             <Button label={error ? 'Try again' : 'Analyse photo'} variant="inverse" icon="zap" onPress={analyse} />
-            <Button label="Retake" variant="ghost" onPress={() => router.back()} style={{ marginTop: -spacing.xs }} />
+            <Button label="Retake" variant="ghostInverse" onPress={() => router.back()} style={{ marginTop: -spacing.xs }} />
           </>
         )}
       </View>

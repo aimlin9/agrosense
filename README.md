@@ -1,111 +1,127 @@
-# 🌱 AgroSense
+# AgroSense
 
-**AI-powered crop disease advisory for smallholder farmers in West Africa.**
+**A crop doctor in every farmer’s pocket.** AgroSense diagnoses crop disease from a single photo and tells Ghanaian smallholder farmers exactly what to do — with weather-aware planting advice and market prices across five major markets. It works in the app, and over SMS on any phone.
 
-A farmer photographs a diseased crop. Within seconds the system identifies the disease using a fine-tuned MobileNetV2 model, generates farmer-friendly treatment advice via Gemini, and stores everything for follow-up. Built mobile-first, with an SMS fallback planned for farmers without smartphones.
+**Website:** https://aimlin9.github.io/agrosense/ · **API:** https://agrosense-g0sb.onrender.com
 
----
+<p>
+  <img src="docs/assets/screens/home.webp" width="200" alt="Home">
+  <img src="docs/assets/screens/confirm.webp" width="200" alt="Photo confirm">
+  <img src="docs/assets/screens/result.webp" width="200" alt="Diagnosis result">
+  <img src="docs/assets/screens/market.webp" width="200" alt="Market prices">
+</p>
 
-## 📊 The Model
+## What’s in the repo
 
-Two-phase transfer learning on MobileNetV2, fine-tuned on PlantVillage (54,305 images, 38 disease classes, 14 crops). Trained on a free Kaggle P100 GPU.
+| Path | What it is |
+|---|---|
+| `backend/` | FastAPI API: auth, diagnosis pipeline, weather, prices, SMS webhook, admin. Tested with pytest. |
+| `mobile/` | React Native + Expo app for Android and iOS. See [mobile/README.md](mobile/README.md). |
+| `docs/` | The marketing website and legal pages, served by GitHub Pages. |
+| `notebooks/` | Training curves and sample predictions from model training. |
+
+## The model
+
+Two-phase transfer learning on MobileNetV2, fine-tuned on PlantVillage (54,305 images, 38 classes, 14 crops).
 
 | Phase | What happened | Best val accuracy |
 |---|---|---|
-| **1** — frozen base | Train classification head only, lr = 1e-3, 10 epochs | **94.6%** |
-| **2** — fine-tune | Unfreeze top 30 layers, lr = 1e-5 (100× smaller), 10 epochs | **97.28%** |
+| 1 — frozen base | Classification head only, lr 1e-3, 10 epochs | 94.6% |
+| 2 — fine-tune | Top 30 layers unfrozen, lr 1e-5, 10 epochs | **97.28%** |
 
-Final model: **2.7 MB TFLite file** with default quantization. Negligible accuracy loss vs the Keras original.
+Exported to a 2.7 MB TFLite file. On two public-domain field photos of tomato late blight the model has never seen, it returns *Late blight* at 99.9% and 100%.
 
-### Training curves
+![Training curves](notebooks/training_curves_combined.png)
 
-![Training curves — Phase 1 + Phase 2](notebooks/training_curves_combined.png)
-
-The dashed vertical line marks the Phase 1 → Phase 2 transition. Notice the brief training-loss spike at epoch 11 (the "fine-tuning shock" as previously-frozen weights start receiving gradients), followed by recovery and a steady climb to 97.28%.
-
-### Predictions on held-out validation images
-
-![Sample predictions on validation set](notebooks/predictions_sample.png)
-
-12 out of 12 correct on a randomly sampled batch from the validation set. Most predictions at 99–100% confidence. The model expresses appropriate uncertainty on visually ambiguous cases — e.g., the Tomato Septoria leaf spot at 53.9% — which is exactly the behavior we want for safety-critical advice.
-
----
-
-## 🏗️ Architecture
+## How a diagnosis works
 
 ```
-┌─────────────────┐     ┌──────────────────────────────────────┐
-│  Mobile / SMS   │────▶│        FastAPI Backend               │
-│  (planned)      │     │                                      │
-└─────────────────┘     │  ┌─────────────────────────────────┐ │
-                        │  │  POST /api/diagnose             │ │
-                        │  └────────┬────────────────────────┘ │
-                        │           │                          │
-                        │           ▼                          │
-                        │  1. Validate JWT + crop_id           │
-                        │  2. Upload photo → Cloudflare R2     │
-                        │  3. Preprocess (Pillow → 224×224)    │
-                        │  4. TFLite inference (top-3)         │
-                        │  5. Disease lookup (PostgreSQL)      │
-                        │  6. Treatment advice (Gemini 2.5)    │
-                        │  7. Persist Diagnosis row            │
-                        │  8. Return JSON response             │
-                        └──────────────────────────────────────┘
+photo + crop ─▶ validate type/size ─▶ re-encode JPEG (upright, EXIF/GPS stripped) ─▶ R2 storage
+             ─▶ 224×224 tensor ─▶ TFLite (38 classes) ─▶ restrict to the chosen crop
+             ─▶ advice: Gemini (cached) ─┬─▶ save Diagnosis ─▶ response
+                       curated fallback ─┘
 ```
 
-## 🛠️ Tech Stack
+Every slow or external step runs off the event loop, and every external service degrades instead of failing the request:
 
-| Layer | Choice |
+| If this is down… | …the API still… |
 |---|---|
-| **ML training** | TensorFlow 2.19 + Keras (Kaggle P100 GPU) |
-| **Inference** | TFLite via `tf.lite.Interpreter` (singleton, loaded at startup) |
-| **Backend** | FastAPI + async SQLAlchemy + Pydantic v2 |
-| **Database** | PostgreSQL 16 (Docker) — 10 tables, Alembic migrations |
-| **Cache / queues** | Redis 7 (Docker) |
-| **Object storage** | Cloudflare R2 (S3-compatible via boto3) |
-| **LLM** | Google Gemini 2.5 Flash for treatment advice |
-| **Auth** | JWT + bcrypt password hashing |
-| **Image processing** | Pillow + NumPy |
+| Gemini | returns curated, conservative treatment advice and a rules-based weather advisory |
+| Cloudflare R2 | diagnoses the photo (it just isn’t stored) |
+| Redis | serves requests; rate limits fall back to memory, caches are skipped (30 s circuit breaker) |
+| Open-Meteo | serves the last forecast for up to 7 days, flagged as stale |
 
----
+Results below 60% confidence, or for crops the model wasn’t trained on, are flagged so the app asks for a better photo and an extension officer’s opinion.
 
-## 📁 Project structure
+## API overview
 
-```
-agrosense/
-├── README.md
-├── docker-compose.yml          # Postgres 16 + Redis 7
-├── backend/
-│   ├── app/
-│   │   ├── main.py             # FastAPI app, lifespan loads ML model at startup
-│   │   ├── config.py           # Pydantic settings, reads .env
-│   │   ├── database.py         # Async SQLAlchemy engine + session factory
-│   │   ├── models/             # 10 SQLAlchemy ORM tables
-│   │   ├── schemas/            # Pydantic request/response models
-│   │   ├── routers/            # auth, diagnose
-│   │   └── services/
-│   │       ├── ml_service.py        # TFLite singleton + predict()
-│   │       ├── image_service.py     # Pillow preprocessing → [1,224,224,3]
-│   │       ├── storage_service.py   # Cloudflare R2 uploads
-│   │       ├── gemini_service.py    # Treatment advice from Gemini
-│   │       ├── security.py          # JWT + bcrypt
-│   │       └── auth_dependencies.py # FastAPI deps for protected routes
-│   ├── ml/
-│   │   ├── crop_disease_model.tflite   # 2.7 MB, 38 classes
-│   │   └── class_names.json
-│   ├── alembic/                # Database migrations (2 versions so far)
-│   ├── scripts/
-│   │   └── seed_crops_and_diseases.py
-│   ├── requirements.txt
-│   └── .env.example
-└── notebooks/
-    ├── training_curves_combined.png
-    └── predictions_sample.png
+| Area | Endpoints |
+|---|---|
+| Auth | `POST /api/auth/register`, `/login`, `/logout`, `/google`, `/admin/login` · `GET/PATCH/DELETE /api/auth/me` · `PATCH /api/auth/me/complete-profile` · `POST /api/auth/me/password` |
+| Diagnosis | `POST /api/diagnose` · `GET /api/diagnoses` (paginated) · `GET /api/diagnoses/stats` · `GET/DELETE /api/diagnoses/{id}` |
+| Catalogue | `GET /api/crops`, `/api/diseases` |
+| Market | `GET /api/prices/latest` (7-day change + sparkline), `/api/prices`, `/api/prices/trends/{crop_id}` |
+| Weather | `GET /api/weather`, `/api/weather/advisory` |
+| Farm plots | CRUD on `/api/plots` |
+| SMS | `POST /api/sms/webhook` (Twilio, signature-verified) |
+| Admin | stats, farmers, diagnoses, expert review under `/api/admin` |
+| Health | `/health` (GET/HEAD, touches DB), `/health/ready` (model, DB, Redis) |
+
+Rate limits (per user, or per IP before sign-in): login 10/min, register 5/min, Google 10/min, admin login 5/min, diagnose 10/min and 60/day, weather 60/min, advisory 20/min. All return `429` with `Retry-After`.
+
+## Running locally
+
+**Prerequisites:** Python 3.12, Node 20+, Docker (for Postgres + Redis).
+
+```bash
+git clone https://github.com/aimlin9/agrosense.git && cd agrosense
+docker compose up -d                       # Postgres 16 + Redis 7
+
+cd backend
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
+cp .env.example .env                       # add SECRET_KEY, and R2/Gemini keys if you have them
+alembic upgrade head
+python -m scripts.seed_crops_and_diseases
+python -m scripts.seed_market_prices       # run daily to keep prices current
+uvicorn app.main:app --reload              # http://localhost:8000/docs
 ```
 
----
+Then the app: see [mobile/README.md](mobile/README.md). Set `EXPO_PUBLIC_API_URL=http://<your-LAN-IP>:8000` in `mobile/.env` to use your local API from a phone.
 
-## 🗺️ Progress
+## Tests and checks
+
+```bash
+cd backend && python -m pytest -q          # 35 tests: real model + routers on SQLite, external services absent
+cd mobile && npm run typecheck && npm run lint && npx expo-doctor
+```
+
+GitHub Actions runs the backend suite on every push to `backend/`.
+
+## Production notes
+
+- **Environment:** set `ENVIRONMENT=production` (refuses to boot with the default `SECRET_KEY`, hides `/docs`), `SECRET_KEY`, `DATABASE_URL`, `REDIS_URL`, R2, `GEMINI_API_KEY`, Twilio and Google client IDs. See `backend/.env.example`.
+- **Prices:** schedule `python -m scripts.seed_market_prices` daily (Render cron job) until a live price feed replaces the indicative data. It only adds missing days.
+- **Memory:** `ml_service` prefers `ai-edge-litert` / `tflite-runtime` when installed and falls back to TensorFlow. Installing LiteRT on the Linux server instead of TensorFlow cuts memory use dramatically.
+- **No schema changes** were needed for the latest release; `alembic upgrade head` is a no-op on an up-to-date database.
+
+## Before the app-store releases
+
+- **iOS Google Sign-In:** set `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` (EAS secret). Without it, the Google button is hidden on iOS.
+- **Sign in with Apple:** Apple’s guideline 4.8 generally requires it when an iOS app offers Google sign-in. Either add it before the App Store submission or ship iOS with phone sign-in only.
+- **Android:** add the production keystore SHA-1 to the Google Cloud Android OAuth client.
+- **Twilio:** keep `TWILIO_VALIDATE_SIGNATURE=true` and point the webhook at `https://<api>/api/sms/webhook`.
+
+## Why this matters
+
+- Ghana’s 2.2M smallholder farms lose 20–40% of crops annually to pests and disease, much of it preventable.
+- There is roughly one agricultural extension officer per 1,500 farmers.
+- About 33M smallholders across West Africa face the same gap.
+
+## Build history
+
+<details>
+<summary>Week-by-week log</summary>
 
 ### ✅ Week 1 — ML model training
 
@@ -270,62 +286,13 @@ Brought social authentication to AgroSense for a smoother portfolio + recruiter 
 - 90-second demo video, portfolio post, pitch deck, LinkedIn launch
 ---
 
-## 🚀 Running locally
 
-**Prerequisites:** Python 3.12, Docker Desktop, Git.
+</details>
 
-```bash
-# 1. Clone and enter
-git clone https://github.com/aimlin9/agrosense.git
-cd agrosense
+## License
 
-# 2. Start Postgres + Redis
-docker compose up -d
+MIT.
 
-# 3. Install backend deps
-cd backend
-python -m venv venv
-.\venv\Scripts\Activate.ps1   # Windows PowerShell
-# source venv/bin/activate    # macOS / Linux
-pip install -r requirements.txt
+## Author
 
-# 4. Configure environment
-cp .env.example .env
-# Edit .env — fill in R2 + Gemini credentials, generate SECRET_KEY:
-#   python -c "import secrets; print(secrets.token_urlsafe(48))"
-
-# 5. Run database migrations
-alembic upgrade head
-
-# 6. Seed reference data
-python -m scripts.seed_crops_and_diseases
-
-# 7. Start the API
-uvicorn app.main:app --reload
-```
-
-Open `http://localhost:8000/docs` for the interactive Swagger UI.
-
----
-
-## 🌍 Why this matters
-
-- 2.2M smallholder farmers in Ghana lose 20–40% of crops annually to preventable diseases
-- 1 agricultural extension officer per ~1,500 farmers — expert advice is effectively unreachable
-- No existing app does AI disease diagnosis for Ghanaian crop varieties
-- 33M smallholders across West Africa face the same gap
-
-AgroSense puts a 97% accurate, multilingual, Ghana-aware diagnostician in every farmer's pocket — and via SMS, on every feature phone too.
-
----
-## 🚧 Known TODOs
-
-- **iOS Google Sign-In** — `mobile/app.json`'s `iosUrlScheme` is a placeholder (`com.googleusercontent.apps._REPLACE_WITH_REVERSED_IOS_CLIENT_ID_`). When building for iOS, replace it with the reversed iOS OAuth client ID from Google Cloud Console (the segments are reversed dot-by-dot, e.g. `com.googleusercontent.apps.123-abc` becomes `com.googleusercontent.apps.123-abc` — same thing, just confusingly named). Android builds are unaffected.
-
-## 📜 License
-
-MIT — see [LICENSE](LICENSE).
-
-## 👤 Author
-
-**Ramsey Opoku Gyimah** ([@aimlin9](https://github.com/aimlin9)) — Computer Science student, Accra, Ghana.
+**Ramsey Opoku Gyimah** ([@aimlin9](https://github.com/aimlin9)), Accra, Ghana.
