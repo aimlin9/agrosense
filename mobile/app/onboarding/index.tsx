@@ -1,10 +1,10 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   FlatList,
-  ImageBackground,
+  ImageSourcePropType,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Wordmark } from '@/components/Brand';
@@ -79,7 +80,8 @@ export default function OnboardingScreen() {
         onMomentumScrollEnd={onScroll}
         getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
         renderItem={({ item }) => (
-          <ImageBackground source={item.image} style={{ width, height }} resizeMode="cover">
+          <View style={{ width, height, overflow: 'hidden' }}>
+            <DriftImage source={item.image} />
             <LinearGradient
               colors={['rgba(8,24,14,0.55)', 'rgba(8,24,14,0.05)', 'rgba(8,24,14,0.55)', 'rgba(8,24,14,0.96)']}
               locations={[0, 0.25, 0.55, 1]}
@@ -96,7 +98,7 @@ export default function OnboardingScreen() {
                 {item.body}
               </Text>
             </View>
-          </ImageBackground>
+          </View>
         )}
       />
 
@@ -133,6 +135,18 @@ export default function OnboardingScreen() {
       </View>
     </View>
   );
+}
+
+/** Slow zoom on the slide photo — subtle life without distracting. */
+function DriftImage({ source }: { source: ImageSourcePropType }) {
+  const reduced = useReducedMotion();
+  const t = useSharedValue(0);
+  useEffect(() => {
+    if (reduced) return;
+    t.value = withRepeat(withTiming(1, { duration: 14000, easing: Easing.inOut(Easing.sin) }), -1, true);
+  }, [reduced, t]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: 1.04 + t.value * 0.08 }, { translateX: t.value * -12 }] }));
+  return <Animated.Image source={source} resizeMode="cover" style={[StyleSheet.absoluteFill, style]} />;
 }
 
 const styles = StyleSheet.create({

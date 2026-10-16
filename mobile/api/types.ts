@@ -50,6 +50,7 @@ export interface DiagnosisDetail {
   low_confidence?: boolean;
   crop_supported?: boolean;
   advice_source?: 'ai' | 'curated';
+  guide_slug?: string | null;
   top_predictions: Prediction[];
   treatment_advice: TreatmentAdvice | null;
   processing_time_ms: number;
@@ -130,4 +131,41 @@ export interface AdvisoryResponse {
   warnings: string[];
   crop_name?: string | null;
   source?: 'ai' | 'rules';
+}
+
+export interface GuideSummary {
+  slug: string;
+  crop: string;
+  name: string;
+  pathogen: string;
+  type: string;
+  severity: 'low' | 'moderate' | 'high';
+  summary: string;
+}
+
+export interface GuideEntry extends GuideSummary {
+  class_name: string;
+  symptoms: string[];
+  conditions: string;
+  spread: string;
+  cultural: string[];
+  organic: string;
+  chemical: string;
+  prevention: string[];
+}
+
+export interface FarmPlot {
+  id: string;
+  farmer_id: string;
+  name: string;
+  crop_id: string | null;
+  crop_name: string | null;
+  size_acres: number | null;
+  gps_lat: number | null;
+  gps_lng: number | null;
+  planting_date: string | null;
+  expected_harvest_date: string | null;
+  soil_type: string | null;
+  irrigation_type: string | null;
+  notes: string | null;
 }

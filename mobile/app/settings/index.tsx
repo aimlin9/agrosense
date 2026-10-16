@@ -96,6 +96,10 @@ export default function SettingsScreen() {
 
         <SectionHeader title="Account" />
         <Card padded={false}>
+          <ListRow icon="map" label="My farms" detail="Fields, crops and seasons" onPress={() => router.push('/farms')} />
+          <Divider inset={spacing.lg + 34 + spacing.md} />
+          <ListRow icon="book-open" label="Crop guide" detail="Diseases, symptoms and treatment" onPress={() => router.push('/guide')} />
+          <Divider inset={spacing.lg + 34 + spacing.md} />
           <ListRow icon="user" label="Profile & farm" detail={farmer?.primary_crop ? `Main crop: ${farmer.primary_crop}` : 'Region, crop, farm location'} onPress={() => router.push('/settings/edit-profile')} />
           <Divider inset={spacing.lg + 34 + spacing.md} />
           <ListRow

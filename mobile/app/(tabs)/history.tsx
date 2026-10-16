@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getErrorMessage } from '@/api/client';
 import { useDiagnosisHistory } from '@/api/hooks';
 import { DiagnosisRow } from '@/components/DiagnosisRow';
+import { Enter } from '@/components/motion';
 import { ScreenTitle } from '@/components/ui/Header';
 import { Chip, EmptyState, ErrorState, Skeleton } from '@/components/ui/Layout';
 import { colors, radius, spacing } from '@/constants/theme';
@@ -84,6 +85,7 @@ export default function HistoryScreen() {
       keyExtractor={(d) => d.id}
       ListHeaderComponent={header}
       renderItem={({ item, index }) => (
+        <Enter index={index} step={45}>
         <View
           style={[
             styles.item,
@@ -94,6 +96,7 @@ export default function HistoryScreen() {
           {index > 0 ? <View style={styles.sep} /> : null}
           <DiagnosisRow item={item} />
         </View>
+        </Enter>
       )}
       onEndReachedThreshold={0.4}
       onEndReached={() => q.hasNextPage && !q.isFetchingNextPage && q.fetchNextPage()}

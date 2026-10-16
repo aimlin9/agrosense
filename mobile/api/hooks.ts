@@ -11,6 +11,9 @@ import type {
   DiagnosisDetail,
   DiagnosisListItem,
   DiagnosisStats,
+  FarmPlot,
+  GuideEntry,
+  GuideSummary,
   LatestPrice,
   WeatherResponse,
 } from '@/api/types';
@@ -24,6 +27,9 @@ export const queryKeys = {
   diagnosis: (id: string) => ['diagnosis', id] as const,
   prices: (cropId: string | null) => ['prices', 'latest', cropId ?? 'all'] as const,
   weather: (c: Coords | null) => ['weather', c?.lat?.toFixed(2), c?.lng?.toFixed(2)] as const,
+  guide: ['guide'] as const,
+  guideEntry: (slug: string) => ['guide', slug] as const,
+  plots: ['plots'] as const,
   advisory: (c: Coords | null, crop?: string | null) =>
     ['advisory', c?.lat?.toFixed(2), c?.lng?.toFixed(2), crop ?? ''] as const,
 };
@@ -121,5 +127,29 @@ export function useAdvisory(coords: Coords | null, cropName?: string | null) {
       ).data,
     staleTime: 3 * 60 * 60 * 1000,
     retry: 1,
+  });
+}
+
+export function useGuide() {
+  return useQuery({
+    queryKey: queryKeys.guide,
+    queryFn: async () => (await apiClient.get<GuideSummary[]>('/api/library')).data,
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+}
+
+export function useGuideEntry(slug: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.guideEntry(slug ?? ''),
+    queryFn: async () => (await apiClient.get<GuideEntry>(`/api/library/${slug}`)).data,
+    enabled: !!slug,
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+}
+
+export function usePlots() {
+  return useQuery({
+    queryKey: queryKeys.plots,
+    queryFn: async () => (await apiClient.get<FarmPlot[]>('/api/plots')).data,
   });
 }

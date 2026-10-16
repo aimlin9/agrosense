@@ -35,6 +35,7 @@ class DiagnosisResponse(BaseModel):
     # False when the selected crop isn't one the model was trained on.
     crop_supported: bool = True
     advice_source: str = "ai"  # ai | curated
+    guide_slug: str | None = None
 
     class Config:
         from_attributes = True

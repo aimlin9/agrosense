@@ -55,7 +55,7 @@ async def list_my_plots(
     db: AsyncSession = Depends(get_db),
 ):
     plots = (
-        await db.execute(select(FarmPlot).where(FarmPlot.farmer_id == farmer.id))
+        await db.execute(select(FarmPlot).where(FarmPlot.farmer_id == farmer.id).order_by(FarmPlot.name))
     ).scalars().all()
     return [await _to_response(p, db) for p in plots]
 

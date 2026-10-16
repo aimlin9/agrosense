@@ -7,6 +7,7 @@ import { getErrorMessage } from '@/api/client';
 import { useLatestPrices } from '@/api/hooks';
 import type { LatestPrice } from '@/api/types';
 import { Sparkline } from '@/components/DataViz';
+import { Enter } from '@/components/motion';
 import { ScreenTitle } from '@/components/ui/Header';
 import { Card, Chip, EmptyState, ErrorState, SectionHeader, Skeleton } from '@/components/ui/Layout';
 import { Text } from '@/components/ui/Text';
@@ -86,6 +87,7 @@ export default function PricesScreen() {
           <EmptyState icon="bar-chart-2" title="No prices yet" message="We don’t have recent prices for this crop. Pull down to refresh." />
         ) : (
           <>
+            <Enter key={crop ?? 'none'}>
             <View style={styles.summary}>
               <Text variant="overline" color="rgba(255,255,255,0.7)">
                 {crop} · average
@@ -101,14 +103,15 @@ export default function PricesScreen() {
                 <SummaryStat icon="arrow-down-left" label="Cheapest to buy" value={`${shortMarket(cheapest.market_name)} · ${formatCedis(cheapest.price_per_kg)}`} />
               </View>
             </View>
+            </Enter>
 
             <SectionHeader title="By market" />
             <Card padded={false}>
               {rows.map((p, i) => (
-                <View key={p.market_name}>
+                <Enter key={`${crop}-${p.market_name}`} index={i} step={50}>
                   {i > 0 ? <View style={styles.rule} /> : null}
                   <MarketRow p={p} />
-                </View>
+                </Enter>
               ))}
             </Card>
 

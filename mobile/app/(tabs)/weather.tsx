@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getErrorMessage } from '@/api/client';
 import { useAdvisory, useWeather } from '@/api/hooks';
 import type { DailyForecast } from '@/api/types';
+import { Enter } from '@/components/motion';
 import { ScreenTitle } from '@/components/ui/Header';
 import { Banner, Card, ErrorState, SectionHeader, Skeleton } from '@/components/ui/Layout';
 import { Text } from '@/components/ui/Text';
@@ -74,6 +75,7 @@ export default function WeatherScreen() {
       ) : (
         <>
           {/* Now */}
+          <Enter>
           <View style={styles.now}>
             <View style={styles.nowTop}>
               <View>
@@ -101,6 +103,7 @@ export default function WeatherScreen() {
               />
             </View>
           </View>
+          </Enter>
           {weather.data.stale ? (
             <Text variant="caption" color={colors.inkMuted} style={{ marginTop: spacing.sm }}>
               Showing the last saved forecast — the live forecast is temporarily unavailable.
@@ -159,10 +162,10 @@ export default function WeatherScreen() {
           <SectionHeader title="Next 7 days" />
           <Card padded={false}>
             {days.map((d, i) => (
-              <View key={d.date}>
+              <Enter key={d.date} index={i} step={50}>
                 {i > 0 ? <View style={styles.rule} /> : null}
                 <DayRow d={d} min={range.min} max={range.max} />
-              </View>
+              </Enter>
             ))}
           </Card>
           <Text variant="caption" color={colors.inkMuted} style={{ marginTop: spacing.md }}>

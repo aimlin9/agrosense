@@ -1,0 +1,659 @@
+[
+  {
+    "slug": "tomato-late-blight",
+    "class_name": "Tomato___Late_blight",
+    "crop": "Tomato",
+    "name": "Late blight",
+    "pathogen": "Phytophthora infestans",
+    "type": "Water mould",
+    "severity": "high",
+    "summary": "One of the most destructive tomato diseases. In cool, wet weather it can kill a field in under two weeks.",
+    "symptoms": [
+      "Large, irregular grey-green patches on leaves that quickly turn dark brown",
+      "White, fuzzy growth on the underside of leaves in humid mornings",
+      "Dark, greasy-looking streaks on stems",
+      "Firm brown blotches on green fruit that spread across the fruit"
+    ],
+    "conditions": "Cool nights (10–20°C), long periods of leaf wetness, fog and rain. Common in Ghana's highland areas and during the main rainy season.",
+    "spread": "Spores blow between fields on wind and rain splash, and travel on infected seedlings and potato tubers.",
+    "cultural": [
+      "Remove and burn or bury infected plants immediately",
+      "Stake and prune plants so leaves dry quickly",
+      "Water at the base in the morning, never in the evening",
+      "Do not plant tomato next to potato"
+    ],
+    "organic": "Copper-based sprays (copper hydroxide or copper oxychloride) applied before rain and repeated every 5–7 days in wet weather.",
+    "chemical": "Protectant fungicides containing mancozeb, or systemic products combining metalaxyl and mancozeb. Rotate active ingredients to avoid resistance.",
+    "prevention": [
+      "Use certified, disease-free seedlings",
+      "Choose tolerant varieties where available",
+      "Destroy volunteer tomato and potato plants after harvest"
+    ]
+  },
+  {
+    "slug": "tomato-early-blight",
+    "class_name": "Tomato___Early_blight",
+    "crop": "Tomato",
+    "name": "Early blight",
+    "pathogen": "Alternaria solani",
+    "type": "Fungus",
+    "severity": "moderate",
+    "summary": "A common leaf disease that starts on older, lower leaves and works its way up, reducing yield and exposing fruit to sunscald.",
+    "symptoms": [
+      "Brown spots with rings inside them, like a target or bullseye",
+      "Yellowing of the leaf around each spot",
+      "Spots appear first on the oldest, lowest leaves",
+      "Dark, sunken spots near the stem end of fruit"
+    ],
+    "conditions": "Warm temperatures (24–29°C) with alternating wet and dry periods. Worse on stressed or poorly fed plants.",
+    "spread": "Spores survive in crop debris and soil, and splash onto lower leaves during rain or overhead watering.",
+    "cultural": [
+      "Remove the lowest leaves once plants are established",
+      "Mulch to stop soil splashing onto leaves",
+      "Feed plants well — balanced fertiliser reduces damage",
+      "Rotate away from tomato, pepper, potato and garden egg for 2–3 seasons"
+    ],
+    "organic": "Neem-based sprays or copper fungicides every 7–10 days once spots appear.",
+    "chemical": "Fungicides containing mancozeb, chlorothalonil or azoxystrobin, following label intervals.",
+    "prevention": [
+      "Clear and burn crop debris after harvest",
+      "Space plants for good airflow",
+      "Start with clean seed and seedlings"
+    ]
+  },
+  {
+    "slug": "tomato-bacterial-spot",
+    "class_name": "Tomato___Bacterial_spot",
+    "crop": "Tomato",
+    "name": "Bacterial spot",
+    "pathogen": "Xanthomonas species",
+    "type": "Bacterium",
+    "severity": "moderate",
+    "summary": "A bacterial disease that thrives in hot, rainy weather and spots leaves and fruit, lowering market value.",
+    "symptoms": [
+      "Small, dark, water-soaked spots on leaves, often with a yellow halo",
+      "Spots merge and leaves turn yellow and drop",
+      "Raised, scabby spots on fruit",
+      "Defoliation that exposes fruit to sunscald"
+    ],
+    "conditions": "Warm (24–30°C), wet and windy weather. Driving rain spreads it fastest.",
+    "spread": "Carried on seed and transplants; splashes between plants in rain, irrigation, and on hands and tools.",
+    "cultural": [
+      "Avoid working among plants when they are wet",
+      "Disinfect stakes and tools between seasons",
+      "Remove badly infected plants",
+      "Use drip or furrow irrigation instead of overhead watering"
+    ],
+    "organic": "Copper sprays slow the spread on new growth; begin at the first sign of spots.",
+    "chemical": "Copper hydroxide, sometimes combined with mancozeb to improve control. Antibiotics are not recommended.",
+    "prevention": [
+      "Use certified seed or hot-water-treated seed",
+      "Rotate for at least two seasons",
+      "Control weeds from the tomato family"
+    ]
+  },
+  {
+    "slug": "tomato-leaf-mold",
+    "class_name": "Tomato___Leaf_Mold",
+    "crop": "Tomato",
+    "name": "Leaf mold",
+    "pathogen": "Passalora fulva",
+    "type": "Fungus",
+    "severity": "moderate",
+    "summary": "A humid-weather disease, especially in greenhouses and dense plantings, that causes leaves to yellow and wither.",
+    "symptoms": [
+      "Pale green or yellow patches on the upper leaf surface",
+      "Olive-green to brown velvety mould on the underside, directly beneath",
+      "Leaves curl, wither and drop",
+      "Rarely affects fruit"
+    ],
+    "conditions": "Very high humidity (above 85%) with mild to warm temperatures and poor ventilation.",
+    "spread": "Spores move on air currents and on workers' clothing; the fungus survives on plant debris.",
+    "cultural": [
+      "Improve airflow by pruning and wider spacing",
+      "Ventilate greenhouses and net houses",
+      "Avoid wetting leaves when watering",
+      "Remove infected lower leaves"
+    ],
+    "organic": "Copper or sulphur-based sprays, with good coverage of the leaf underside.",
+    "chemical": "Fungicides containing chlorothalonil or mancozeb; follow the label.",
+    "prevention": [
+      "Use resistant varieties where available",
+      "Clean out greenhouses between crops",
+      "Keep humidity down at night"
+    ]
+  },
+  {
+    "slug": "tomato-septoria-leaf-spot",
+    "class_name": "Tomato___Septoria_leaf_spot",
+    "crop": "Tomato",
+    "name": "Septoria leaf spot",
+    "pathogen": "Septoria lycopersici",
+    "type": "Fungus",
+    "severity": "moderate",
+    "summary": "Produces many small spots on lower leaves; heavy infections strip plants of foliage during fruiting.",
+    "symptoms": [
+      "Many small, round spots with dark borders and grey or tan centres",
+      "Tiny black dots inside the spots",
+      "Lower leaves yellow and drop first",
+      "Fruit is rarely affected directly"
+    ],
+    "conditions": "Warm, wet weather with frequent rain or overhead irrigation.",
+    "spread": "Spores splash from infected debris and weeds onto lower leaves.",
+    "cultural": [
+      "Remove infected lower leaves early",
+      "Mulch the soil surface",
+      "Stake plants off the ground",
+      "Avoid overhead watering"
+    ],
+    "organic": "Copper fungicide sprays every 7–10 days in wet periods.",
+    "chemical": "Chlorothalonil or mancozeb-based fungicides.",
+    "prevention": [
+      "Rotate crops for 2–3 seasons",
+      "Burn or bury crop residue",
+      "Control nightshade weeds that host the fungus"
+    ]
+  },
+  {
+    "slug": "tomato-spider-mites",
+    "class_name": "Tomato___Spider_mites Two-spotted_spider_mite",
+    "crop": "Tomato",
+    "name": "Spider mites",
+    "pathogen": "Tetranychus urticae",
+    "type": "Pest (mite)",
+    "severity": "moderate",
+    "summary": "Tiny sap-sucking pests that multiply quickly in hot, dry weather and can bleach and kill leaves.",
+    "symptoms": [
+      "Fine yellow or white speckling on leaves",
+      "Leaves turn bronze, dry out and drop",
+      "Fine webbing on the underside of leaves and between stems",
+      "Tiny moving dots visible under a hand lens"
+    ],
+    "conditions": "Hot, dry, dusty conditions — typical of the dry season and Harmattan.",
+    "spread": "Mites crawl between touching plants and are carried by wind, clothing and tools.",
+    "cultural": [
+      "Spray the underside of leaves with a strong jet of water",
+      "Keep plants well watered to reduce stress",
+      "Reduce dust along field paths",
+      "Remove heavily infested leaves"
+    ],
+    "organic": "Neem oil or insecticidal soap sprayed on the underside of leaves every 5–7 days.",
+    "chemical": "A registered miticide such as abamectin. Rotate products — mites develop resistance fast.",
+    "prevention": [
+      "Avoid broad-spectrum insecticides that kill predatory mites",
+      "Control weeds around the field",
+      "Inspect leaf undersides weekly in dry weather"
+    ]
+  },
+  {
+    "slug": "tomato-target-spot",
+    "class_name": "Tomato___Target_Spot",
+    "crop": "Tomato",
+    "name": "Target spot",
+    "pathogen": "Corynespora cassiicola",
+    "type": "Fungus",
+    "severity": "moderate",
+    "summary": "A warm, humid-weather disease that spots leaves, stems and fruit and is common in the tropics.",
+    "symptoms": [
+      "Brown spots with light centres and faint rings",
+      "Spots may crack in the middle",
+      "Sunken spots on fruit",
+      "Leaf drop starting from the lower canopy"
+    ],
+    "conditions": "Warm temperatures and high humidity or long periods of leaf wetness.",
+    "spread": "Survives on crop debris and many weed hosts; spores travel on wind and splash.",
+    "cultural": [
+      "Prune for airflow and stake plants",
+      "Remove infected leaves and debris",
+      "Avoid overhead watering"
+    ],
+    "organic": "Copper-based sprays at the first sign of spots.",
+    "chemical": "Fungicides containing chlorothalonil, mancozeb or azoxystrobin; rotate modes of action.",
+    "prevention": [
+      "Rotate with non-host crops such as maize",
+      "Clear weeds and debris after harvest"
+    ]
+  },
+  {
+    "slug": "tomato-yellow-leaf-curl-virus",
+    "class_name": "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+    "crop": "Tomato",
+    "name": "Yellow leaf curl virus",
+    "pathogen": "Tomato yellow leaf curl virus (TYLCV)",
+    "type": "Virus",
+    "severity": "high",
+    "summary": "Spread by whiteflies. Plants infected young may produce almost no fruit. There is no cure once a plant is infected.",
+    "symptoms": [
+      "Small, upward-curling leaves with yellow edges",
+      "Stunted plants with a bushy top",
+      "Flowers drop and few fruit set",
+      "Whiteflies on the underside of leaves"
+    ],
+    "conditions": "Warm, dry periods when whitefly numbers are high.",
+    "spread": "Carried from plant to plant by the whitefly Bemisia tabaci. Not spread by seed.",
+    "cultural": [
+      "Uproot and destroy infected plants early",
+      "Raise seedlings under insect-proof netting",
+      "Use yellow sticky traps to monitor and reduce whiteflies",
+      "Remove weeds that harbour whiteflies"
+    ],
+    "organic": "Neem-based sprays and reflective mulches reduce whitefly feeding.",
+    "chemical": "There is no chemical cure for the virus. An extension officer can advise a registered insecticide for whitefly control.",
+    "prevention": [
+      "Plant resistant (TY) varieties",
+      "Avoid planting next to older, infected tomato fields",
+      "Leave a tomato-free break between seasons"
+    ]
+  },
+  {
+    "slug": "tomato-mosaic-virus",
+    "class_name": "Tomato___Tomato_mosaic_virus",
+    "crop": "Tomato",
+    "name": "Mosaic virus",
+    "pathogen": "Tomato mosaic virus (ToMV)",
+    "type": "Virus",
+    "severity": "high",
+    "summary": "A very stable virus spread by hands and tools. It reduces vigour and fruit quality and has no cure.",
+    "symptoms": [
+      "Light and dark green mottled pattern on leaves",
+      "Distorted, fern-like or narrow leaves",
+      "Stunted growth",
+      "Uneven ripening or brown streaks inside fruit"
+    ],
+    "conditions": "Any conditions — spreads wherever plants are handled.",
+    "spread": "By touch: hands, tools, clothing and pruning. Survives for months in debris and on seed.",
+    "cultural": [
+      "Remove and destroy infected plants",
+      "Wash hands with soap before handling plants",
+      "Disinfect tools in a bleach or milk solution",
+      "Do not smoke or handle tobacco near tomato plants"
+    ],
+    "organic": "No treatment cures the virus; focus on hygiene and removal.",
+    "chemical": "No chemical cure exists. Prevention is the only control.",
+    "prevention": [
+      "Use certified, treated seed",
+      "Choose resistant varieties",
+      "Rotate away from tomato and pepper"
+    ]
+  },
+  {
+    "slug": "potato-late-blight",
+    "class_name": "Potato___Late_blight",
+    "crop": "Potato",
+    "name": "Late blight",
+    "pathogen": "Phytophthora infestans",
+    "type": "Water mould",
+    "severity": "high",
+    "summary": "The disease behind the Irish potato famine. It destroys leaves and rots tubers in storage.",
+    "symptoms": [
+      "Dark, water-soaked patches on leaf tips and edges",
+      "White mould on the underside of leaves in humid weather",
+      "Blackened stems and collapsing plants",
+      "Reddish-brown rot just under the tuber skin"
+    ],
+    "conditions": "Cool, wet, humid weather — especially in highland growing areas.",
+    "spread": "Wind-blown spores, rain splash and infected seed tubers.",
+    "cultural": [
+      "Plant certified seed tubers",
+      "Hill soil up around plants to protect tubers",
+      "Destroy infected haulms before harvest",
+      "Do not plant near tomato"
+    ],
+    "organic": "Copper-based sprays applied preventively in wet weather.",
+    "chemical": "Mancozeb protectants or metalaxyl-plus-mancozeb systemic fungicides, rotated.",
+    "prevention": [
+      "Remove volunteer potatoes",
+      "Harvest in dry weather and store only sound tubers"
+    ]
+  },
+  {
+    "slug": "potato-early-blight",
+    "class_name": "Potato___Early_blight",
+    "crop": "Potato",
+    "name": "Early blight",
+    "pathogen": "Alternaria solani",
+    "type": "Fungus",
+    "severity": "moderate",
+    "summary": "Causes target-like spots on older leaves and can reduce tuber size when leaves die early.",
+    "symptoms": [
+      "Dark brown spots with concentric rings on older leaves",
+      "Yellowing around the spots",
+      "Leaves die from the bottom of the plant upwards",
+      "Dark, sunken lesions on tubers"
+    ],
+    "conditions": "Warm days, dew or rain, and plants under stress from drought or low fertility.",
+    "spread": "Survives in soil and debris; spores splash onto leaves.",
+    "cultural": [
+      "Maintain good fertility, especially nitrogen",
+      "Rotate for 2–3 seasons",
+      "Remove infected debris after harvest"
+    ],
+    "organic": "Copper or neem sprays at first symptoms.",
+    "chemical": "Mancozeb, chlorothalonil or azoxystrobin-based fungicides.",
+    "prevention": [
+      "Use healthy seed tubers",
+      "Avoid water stress during tuber formation"
+    ]
+  },
+  {
+    "slug": "maize-gray-leaf-spot",
+    "class_name": "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot",
+    "crop": "Maize",
+    "name": "Gray leaf spot",
+    "pathogen": "Cercospora zeae-maydis",
+    "type": "Fungus",
+    "severity": "moderate",
+    "summary": "A major maize leaf disease in humid areas. Severe infections before grain fill cut yields sharply.",
+    "symptoms": [
+      "Long, narrow, rectangular grey or tan lesions running between leaf veins",
+      "Lesions merge and leaves die",
+      "Starts on lower leaves and moves up",
+      "Weakened stalks prone to lodging"
+    ],
+    "conditions": "Warm temperatures with high humidity, heavy dew and fog.",
+    "spread": "The fungus survives on maize residue left on the surface and spreads by wind and splash.",
+    "cultural": [
+      "Rotate maize with legumes such as cowpea or soybean",
+      "Bury or remove maize residue",
+      "Avoid very dense planting"
+    ],
+    "organic": "No reliable organic spray; rely on rotation, residue management and resistant varieties.",
+    "chemical": "Strobilurin or triazole fungicides at early tasselling when disease pressure is high.",
+    "prevention": [
+      "Plant tolerant varieties recommended for your zone",
+      "Plant early in the season to avoid peak humidity at grain fill"
+    ]
+  },
+  {
+    "slug": "maize-common-rust",
+    "class_name": "Corn_(maize)___Common_rust_",
+    "crop": "Maize",
+    "name": "Common rust",
+    "pathogen": "Puccinia sorghi",
+    "type": "Fungus",
+    "severity": "low",
+    "summary": "Produces rusty pustules on leaves. Usually a minor problem, but heavy early infections reduce yield.",
+    "symptoms": [
+      "Small, raised, cinnamon-brown pustules on both leaf surfaces",
+      "Pustules release rust-coloured powder when rubbed",
+      "Pustules turn dark brown to black later in the season",
+      "Yellowing of heavily infected leaves"
+    ],
+    "conditions": "Cool to moderate temperatures (16–25°C) with high humidity and dew.",
+    "spread": "Spores blow long distances on the wind.",
+    "cultural": [
+      "Plant resistant varieties",
+      "Plant early to avoid peak spore periods",
+      "Maintain balanced fertility"
+    ],
+    "organic": "Sulphur-based sprays can help on small plots.",
+    "chemical": "Triazole or strobilurin fungicides, only if severe infection appears before tasselling.",
+    "prevention": [
+      "Choose rust-resistant hybrids",
+      "Monitor leaves from knee height onwards"
+    ]
+  },
+  {
+    "slug": "maize-northern-leaf-blight",
+    "class_name": "Corn_(maize)___Northern_Leaf_Blight",
+    "crop": "Maize",
+    "name": "Northern leaf blight",
+    "pathogen": "Exserohilum turcicum",
+    "type": "Fungus",
+    "severity": "moderate",
+    "summary": "Causes long cigar-shaped lesions. Infection before silking can cause significant yield loss.",
+    "symptoms": [
+      "Long (2.5–15 cm), cigar-shaped, grey-green to tan lesions",
+      "Lesions start on lower leaves",
+      "Dark spore growth on lesions in humid weather",
+      "Large areas of dead leaf tissue"
+    ],
+    "conditions": "Moderate temperatures (18–27°C) with heavy dew and long wet periods.",
+    "spread": "Survives on maize residue; spores spread by wind and rain.",
+    "cultural": [
+      "Rotate with non-cereal crops",
+      "Manage residue by burying or removing it",
+      "Avoid continuous maize"
+    ],
+    "organic": "No dependable organic spray; prioritise resistant varieties and rotation.",
+    "chemical": "Fungicides such as azoxystrobin or propiconazole if lesions appear on upper leaves before silking.",
+    "prevention": [
+      "Plant resistant or tolerant hybrids",
+      "Scout fields regularly from the knee-high stage"
+    ]
+  },
+  {
+    "slug": "pepper-bacterial-spot",
+    "class_name": "Pepper,_bell___Bacterial_spot",
+    "crop": "Bell pepper",
+    "name": "Bacterial spot",
+    "pathogen": "Xanthomonas species",
+    "type": "Bacterium",
+    "severity": "moderate",
+    "summary": "The most important bacterial disease of pepper in warm, wet regions; causes leaf drop and spotted fruit.",
+    "symptoms": [
+      "Small, water-soaked spots on leaves that turn brown",
+      "Yellowing leaves that drop early",
+      "Raised, scabby spots on fruit",
+      "Sunscald on fruit exposed by leaf loss"
+    ],
+    "conditions": "Warm, wet, windy weather and overhead irrigation.",
+    "spread": "Seed, transplants, rain splash, and handling wet plants.",
+    "cultural": [
+      "Use clean seed and seedlings",
+      "Avoid handling plants when wet",
+      "Remove infected plants and debris",
+      "Rotate away from pepper and tomato"
+    ],
+    "organic": "Copper sprays started early and repeated during wet periods.",
+    "chemical": "Copper hydroxide with mancozeb improves control. Antibiotics are not advised.",
+    "prevention": [
+      "Plant resistant varieties where available",
+      "Disinfect tools and stakes"
+    ]
+  },
+  {
+    "slug": "orange-citrus-greening",
+    "class_name": "Orange___Haunglongbing_(Citrus_greening)",
+    "crop": "Orange",
+    "name": "Citrus greening (HLB)",
+    "pathogen": "Candidatus Liberibacter species",
+    "type": "Bacterium",
+    "severity": "high",
+    "summary": "A deadly, incurable citrus disease spread by psyllid insects. Infected trees decline and die within years.",
+    "symptoms": [
+      "Blotchy, uneven yellowing of leaves (not symmetrical)",
+      "Small, lopsided fruit that stays green at the bottom",
+      "Bitter fruit with aborted seeds",
+      "Twig dieback and heavy fruit drop"
+    ],
+    "conditions": "Anywhere the psyllid insect vector is present.",
+    "spread": "Spread by citrus psyllids feeding on new shoots, and by grafting infected budwood.",
+    "cultural": [
+      "Remove and destroy infected trees to protect the orchard",
+      "Control psyllids on new flush growth",
+      "Report suspected cases to an extension officer"
+    ],
+    "organic": "Neem and horticultural oils reduce psyllid numbers but do not cure infected trees.",
+    "chemical": "No cure exists. Registered insecticides for psyllid control, as advised by an officer.",
+    "prevention": [
+      "Buy seedlings only from certified nurseries",
+      "Inspect new growth regularly for psyllids"
+    ]
+  },
+  {
+    "slug": "peach-bacterial-spot",
+    "class_name": "Peach___Bacterial_spot",
+    "crop": "Peach",
+    "name": "Bacterial spot",
+    "pathogen": "Xanthomonas arboricola pv. pruni",
+    "type": "Bacterium",
+    "severity": "moderate",
+    "summary": "Spots and holes in leaves, and pitted, cracked fruit in warm, wet weather.",
+    "symptoms": [
+      "Small angular spots on leaves that fall out, leaving shot-holes",
+      "Yellowing and early leaf drop",
+      "Pitted, cracked spots on fruit",
+      "Cankers on twigs"
+    ],
+    "conditions": "Warm, wet, windy weather.",
+    "spread": "Rain splash and wind from twig cankers.",
+    "cultural": ["Prune out infected twigs", "Improve airflow in the canopy"],
+    "organic": "Copper sprays during dormancy and early season.",
+    "chemical": "Copper-based bactericides; follow the label for timing.",
+    "prevention": ["Plant tolerant varieties", "Avoid excess nitrogen"]
+  },
+  {
+    "slug": "apple-scab",
+    "class_name": "Apple___Apple_scab",
+    "crop": "Apple",
+    "name": "Apple scab",
+    "pathogen": "Venturia inaequalis",
+    "type": "Fungus",
+    "severity": "moderate",
+    "summary": "Olive-green to black scabby spots on leaves and fruit that reduce fruit quality.",
+    "symptoms": ["Olive-green velvety spots on leaves", "Dark, corky scabs on fruit", "Early leaf drop"],
+    "conditions": "Cool, wet spring-like weather.",
+    "spread": "Spores from fallen infected leaves.",
+    "cultural": ["Rake up and destroy fallen leaves", "Prune for airflow"],
+    "organic": "Sulphur or copper sprays during wet periods.",
+    "chemical": "Protectant fungicides such as captan or mancozeb.",
+    "prevention": ["Plant resistant varieties"]
+  },
+  {
+    "slug": "apple-black-rot",
+    "class_name": "Apple___Black_rot",
+    "crop": "Apple",
+    "name": "Black rot",
+    "pathogen": "Botryosphaeria obtusa",
+    "type": "Fungus",
+    "severity": "moderate",
+    "summary": "Causes leaf spots, fruit rot and branch cankers.",
+    "symptoms": ["Purple-edged 'frog-eye' leaf spots", "Rotting fruit with rings", "Sunken cankers on branches"],
+    "conditions": "Warm, humid weather.",
+    "spread": "Spores from mummified fruit and cankers.",
+    "cultural": ["Remove mummified fruit and dead wood", "Prune out cankers"],
+    "organic": "Copper sprays in wet periods.",
+    "chemical": "Captan or other registered fungicides.",
+    "prevention": ["Keep trees vigorous and well pruned"]
+  },
+  {
+    "slug": "apple-cedar-rust",
+    "class_name": "Apple___Cedar_apple_rust",
+    "crop": "Apple",
+    "name": "Cedar apple rust",
+    "pathogen": "Gymnosporangium juniperi-virginianae",
+    "type": "Fungus",
+    "severity": "low",
+    "summary": "Bright orange spots on leaves; needs juniper trees nearby to complete its life cycle.",
+    "symptoms": ["Bright yellow-orange spots on leaves", "Small cups or tubes under the spots", "Early leaf drop in severe cases"],
+    "conditions": "Wet spring weather near juniper or cedar trees.",
+    "spread": "Spores travel between apple and juniper hosts.",
+    "cultural": ["Remove nearby juniper hosts where practical"],
+    "organic": "Sulphur sprays at early leaf stage.",
+    "chemical": "Registered rust fungicides such as myclobutanil.",
+    "prevention": ["Plant resistant varieties"]
+  },
+  {
+    "slug": "cherry-powdery-mildew",
+    "class_name": "Cherry_(including_sour)___Powdery_mildew",
+    "crop": "Cherry",
+    "name": "Powdery mildew",
+    "pathogen": "Podosphaera clandestina",
+    "type": "Fungus",
+    "severity": "low",
+    "summary": "A white powdery coating on young leaves and shoots.",
+    "symptoms": ["White powdery patches on leaves", "Curled, distorted young leaves"],
+    "conditions": "Warm days with humid nights; does not need rain.",
+    "spread": "Wind-blown spores.",
+    "cultural": ["Prune for airflow", "Avoid excess nitrogen"],
+    "organic": "Sulphur or potassium bicarbonate sprays.",
+    "chemical": "Registered mildew fungicides.",
+    "prevention": ["Remove infected shoots early"]
+  },
+  {
+    "slug": "grape-black-rot",
+    "class_name": "Grape___Black_rot",
+    "crop": "Grape",
+    "name": "Black rot",
+    "pathogen": "Guignardia bidwellii",
+    "type": "Fungus",
+    "severity": "high",
+    "summary": "Can destroy a whole crop by turning berries into hard, black mummies.",
+    "symptoms": ["Tan leaf spots with dark borders", "Berries shrivel into hard black mummies"],
+    "conditions": "Warm, wet weather.",
+    "spread": "Spores from mummified berries.",
+    "cultural": ["Remove all mummies and infected canes", "Open the canopy"],
+    "organic": "Copper sprays from early shoot growth.",
+    "chemical": "Mancozeb or myclobutanil fungicides.",
+    "prevention": ["Keep vineyards clean over the off-season"]
+  },
+  {
+    "slug": "grape-esca",
+    "class_name": "Grape___Esca_(Black_Measles)",
+    "crop": "Grape",
+    "name": "Esca (black measles)",
+    "pathogen": "A complex of wood-rotting fungi",
+    "type": "Fungus",
+    "severity": "high",
+    "summary": "A trunk disease that causes striped leaves and spotted berries, and can kill vines.",
+    "symptoms": ["'Tiger-stripe' yellow and brown leaf patterns", "Dark spots on berries", "Sudden wilting of vines"],
+    "conditions": "Enters through pruning wounds; worse under drought stress.",
+    "spread": "Spores infect fresh pruning cuts.",
+    "cultural": ["Prune in dry weather", "Remove dead wood"],
+    "organic": "Seal large pruning wounds.",
+    "chemical": "No effective cure; wound protectants reduce infection.",
+    "prevention": ["Use clean planting material"]
+  },
+  {
+    "slug": "grape-leaf-blight",
+    "class_name": "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)",
+    "crop": "Grape",
+    "name": "Leaf blight",
+    "pathogen": "Pseudocercospora vitis",
+    "type": "Fungus",
+    "severity": "low",
+    "summary": "Dark irregular spots that cause early leaf drop late in the season.",
+    "symptoms": ["Dark brown, irregular spots on leaves", "Yellowing and early leaf fall"],
+    "conditions": "Warm, humid conditions.",
+    "spread": "Spores from infected leaves.",
+    "cultural": ["Remove fallen leaves", "Improve airflow"],
+    "organic": "Copper sprays.",
+    "chemical": "Mancozeb-based fungicides.",
+    "prevention": ["Clean up debris after harvest"]
+  },
+  {
+    "slug": "squash-powdery-mildew",
+    "class_name": "Squash___Powdery_mildew",
+    "crop": "Squash",
+    "name": "Powdery mildew",
+    "pathogen": "Podosphaera xanthii",
+    "type": "Fungus",
+    "severity": "moderate",
+    "summary": "A white powder on leaves that weakens plants and reduces fruit size and storage life.",
+    "symptoms": ["White powdery spots on upper leaves", "Spots spread to cover leaves", "Leaves yellow, dry and die"],
+    "conditions": "Warm days, cool nights and shade; spreads even in dry weather.",
+    "spread": "Wind-blown spores.",
+    "cultural": ["Space plants and plant in full sun", "Remove badly infected leaves"],
+    "organic": "Sulphur, potassium bicarbonate or diluted milk sprays weekly.",
+    "chemical": "Registered fungicides for cucurbit mildew; rotate products.",
+    "prevention": ["Plant tolerant varieties"]
+  },
+  {
+    "slug": "strawberry-leaf-scorch",
+    "class_name": "Strawberry___Leaf_scorch",
+    "crop": "Strawberry",
+    "name": "Leaf scorch",
+    "pathogen": "Diplocarpon earlianum",
+    "type": "Fungus",
+    "severity": "low",
+    "summary": "Purple spots that merge until leaves look burnt.",
+    "symptoms": ["Small dark purple spots on leaves", "Leaves turn brown and look scorched"],
+    "conditions": "Warm, wet weather.",
+    "spread": "Spores splash from infected leaves.",
+    "cultural": ["Remove old infected leaves", "Avoid overhead watering"],
+    "organic": "Copper sprays.",
+    "chemical": "Captan or other registered fungicides.",
+    "prevention": ["Renew beds regularly", "Use healthy transplants"]
+  }
+]

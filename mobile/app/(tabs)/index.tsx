@@ -8,13 +8,34 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCrops, useDiagnosisStats, useLatestPrices, useRecentDiagnoses, useWeather } from '@/api/hooks';
 import { DiagnosisRow } from '@/components/DiagnosisRow';
+import { CountUp, Enter } from '@/components/motion';
 import { Button } from '@/components/ui/Button';
 import { Card, Divider, SectionHeader, Skeleton } from '@/components/ui/Layout';
 import { Text } from '@/components/ui/Text';
 import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { useLocation } from '@/hooks/useLocation';
-import { firstName, formatCedis, greeting, initials, weatherCondition } from '@/lib/format';
+import { sprayRating } from '@/lib/agronomy';
+import { firstName, formatCedis, greeting, initials, relativeDay, weatherCondition } from '@/lib/format';
 import { useAuthStore } from '@/store/authStore';
+
+const QUICK: {
+  label: string;
+  icon: keyof typeof Feather.glyphMap;
+  href: '/guide' | '/farms' | '/(tabs)/prices' | '/(tabs)/weather';
+  fg: string;
+  bg: string;
+}[] = [
+  { label: 'Crop guide', icon: 'book-open', href: '/guide', fg: colors.brand, bg: colors.brandTint },
+  { label: 'My farms', icon: 'map', href: '/farms', fg: colors.info, bg: colors.infoTint },
+  { label: 'Market', icon: 'trending-up', href: '/(tabs)/prices', fg: colors.warning, bg: colors.warningTint },
+  { label: 'Weather', icon: 'cloud-rain', href: '/(tabs)/weather', fg: colors.inkSoft, bg: colors.surfaceSunken },
+];
+
+const SPRAY = {
+  good: { label: 'Good', icon: 'check' as const, fg: colors.success, bg: colors.successTint },
+  fair: { label: 'Fair', icon: 'minus' as const, fg: colors.warning, bg: colors.warningTint },
+  poor: { label: 'Avoid', icon: 'x' as const, fg: colors.danger, bg: colors.dangerTint },
+};
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -50,6 +71,7 @@ export default function HomeScreen() {
   const today = weather.data?.daily?.[0];
   const cond = weatherCondition(weather.data?.current?.weather_code);
   const topPrices = (prices.data ?? []).filter((p) => p.crop_id === marketCrop?.id).slice(0, 3);
+  const spray = (weather.data?.daily ?? []).slice(0, 3).map((day) => ({ day, ...sprayRating(day) }));
 
   return (
     <ScrollView
@@ -59,6 +81,7 @@ export default function HomeScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} colors={[colors.brand]} />}
     >
       {/* Header */}
+      <Enter>
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text variant="overline" color={colors.inkMuted}>
@@ -86,8 +109,10 @@ export default function HomeScreen() {
           )}
         </Pressable>
       </View>
+      </Enter>
 
       {/* Scan hero */}
+      <Enter index={1}>
       <View style={styles.hero}>
         <Image source={require('@/assets/onboarding/slide-1-diagnose.jpg')} style={StyleSheet.absoluteFill} contentFit="cover" />
         <LinearGradient
@@ -108,8 +133,32 @@ export default function HomeScreen() {
           <Button label="Scan a plant" icon="camera" variant="inverse" size="md" onPress={() => router.push('/(tabs)/diagnose')} style={{ alignSelf: 'flex-start' }} />
         </View>
       </View>
+      </Enter>
+
+      {/* Quick actions */}
+      <Enter index={2}>
+        <View style={styles.actions}>
+          {QUICK.map((a) => (
+            <Pressable
+              key={a.label}
+              onPress={() => router.push(a.href)}
+              accessibilityRole="button"
+              accessibilityLabel={a.label}
+              style={({ pressed }) => [styles.action, pressed && { transform: [{ scale: 0.96 }] }]}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: a.bg }]}>
+                <Feather name={a.icon} size={19} color={a.fg} />
+              </View>
+              <Text variant="caption" color={colors.ink} align="center" numberOfLines={1}>
+                {a.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </Enter>
 
       {/* Weather */}
+      <Enter index={3}>
       <Card onPress={() => router.push('/(tabs)/weather')} style={{ marginTop: spacing.lg }} accessibilityLabel="Open weather">
         {weather.isLoading || !location.coords ? (
           <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
@@ -144,8 +193,39 @@ export default function HomeScreen() {
           </View>
         )}
       </Card>
+      </Enter>
+
+      {/* Spray outlook */}
+      {spray.length ? (
+        <Enter index={4}>
+          <SectionHeader title="Spray outlook" action="Forecast" onAction={() => router.push('/(tabs)/weather')} />
+          <Card padded={false}>
+            <View style={styles.sprayRow}>
+              {spray.map(({ day, rating, reason }, i) => (
+                <View key={day.date} style={[styles.sprayCell, i > 0 && styles.sprayDivider]} accessible accessibilityLabel={`${relativeDay(day.date)}: ${reason}`}>
+                  <Text variant="caption" color={colors.inkMuted}>
+                    {relativeDay(day.date)}
+                  </Text>
+                  <View style={[styles.sprayDot, { backgroundColor: SPRAY[rating].bg }]}>
+                    <Feather name={SPRAY[rating].icon} size={16} color={SPRAY[rating].fg} />
+                  </View>
+                  <Text variant="smallStrong" color={SPRAY[rating].fg}>
+                    {SPRAY[rating].label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.sprayNote}>
+              <Text variant="caption" color={colors.inkSoft}>
+                {spray[0].reason}. Based on rain chance and wind.
+              </Text>
+            </View>
+          </Card>
+        </Enter>
+      ) : null}
 
       {/* Activity */}
+      <Enter index={5}>
       <SectionHeader title="Your activity" />
       <Card padded={false}>
         <View style={styles.stats}>
@@ -156,10 +236,12 @@ export default function HomeScreen() {
           <Stat value={stats.data?.healthy} label="Healthy" loading={stats.isLoading} />
         </View>
       </Card>
+      </Enter>
 
       {/* Recent */}
       {recent.data && recent.data.length > 0 ? (
         <>
+          <Enter index={6}>
           <SectionHeader title="Recent scans" action="See all" onAction={() => router.push('/(tabs)/history')} />
           <Card padded={false}>
             {recent.data.map((d, i) => (
@@ -169,6 +251,7 @@ export default function HomeScreen() {
               </View>
             ))}
           </Card>
+          </Enter>
         </>
       ) : null}
 
@@ -219,9 +302,7 @@ function Stat({ value, label, loading }: { value?: number; label: string; loadin
       {loading ? (
         <Skeleton width={28} height={26} />
       ) : (
-        <Text style={{ fontFamily: fonts.display, fontSize: 26, lineHeight: 30 }} tabular>
-          {value ?? 0}
-        </Text>
+        <CountUp value={value ?? 0} variant="heading" style={{ fontFamily: fonts.display, fontSize: 26, lineHeight: 30 }} />
       )}
       <Text variant="caption" color={colors.inkMuted} align="center">
         {label}
@@ -232,6 +313,23 @@ function Stat({ value, label, loading }: { value?: number; label: string; loadin
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, marginBottom: spacing.xl },
+  actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
+  action: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.hairline,
+  },
+  actionIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  sprayRow: { flexDirection: 'row' },
+  sprayCell: { flex: 1, alignItems: 'center', gap: 6, paddingVertical: spacing.lg },
+  sprayDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.hairline },
+  sprayDot: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  sprayNote: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.hairline, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   avatar: {
     width: 44,
     height: 44,

@@ -1,8 +1,9 @@
 import { View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
+import { AnimatedBar } from '@/components/motion';
 import { Text } from '@/components/ui/Text';
-import { colors, radius, spacing } from '@/constants/theme';
+import { colors, spacing } from '@/constants/theme';
 
 export function Sparkline({
   values,
@@ -49,9 +50,7 @@ export function ConfidenceMeter({ value, tone }: { value: number; tone?: string 
           {pct}%
         </Text>
       </View>
-      <View style={{ height: 6, borderRadius: radius.pill, backgroundColor: colors.surfaceSunken, overflow: 'hidden' }}>
-        <View style={{ width: `${pct}%`, height: '100%', backgroundColor: color, borderRadius: radius.pill }} />
-      </View>
+      <AnimatedBar value={pct / 100} color={color} />
     </View>
   );
 }

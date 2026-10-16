@@ -5,12 +5,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { Alert, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, Share, StyleSheet, View } from 'react-native';
+import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { apiClient, getErrorMessage } from '@/api/client';
 import { queryKeys, useDiagnosis } from '@/api/hooks';
 import { ConfidenceMeter } from '@/components/DataViz';
+import { Enter } from '@/components/motion';
 import { Button } from '@/components/ui/Button';
 import { IconButton, StackHeader } from '@/components/ui/Header';
 import { Banner, Card, ErrorState, SectionHeader, Skeleton, Tag } from '@/components/ui/Layout';
@@ -25,6 +27,16 @@ export default function DiagnosisScreen() {
   const queryClient = useQueryClient();
   const { data, isLoading, isError, error, refetch } = useDiagnosis(id);
   const [deleting, setDeleting] = useState(false);
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollY.value = e.contentOffset.y;
+  });
+  const heroStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: interpolate(scrollY.value, [-200, 0, 340], [-100, 0, 140], Extrapolation.CLAMP) },
+      { scale: interpolate(scrollY.value, [-200, 0], [1.6, 1], Extrapolation.CLAMP) },
+    ],
+  }));
 
   if (isLoading) return <LoadingView />;
   if (isError || !data) {
@@ -86,12 +98,14 @@ export default function DiagnosisScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
       <StatusBar style={image ? 'light' : 'dark'} />
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxxl }} showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxxl }} showsVerticalScrollIndicator={false}>
         {/* Hero */}
         <View style={[styles.hero, !image && { height: insets.top + 120, backgroundColor: colors.brandTint }]}>
           {image ? (
             <>
-              <Image source={{ uri: image }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+              <Animated.View style={[StyleSheet.absoluteFill, heroStyle]}>
+                <Image source={{ uri: image }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+              </Animated.View>
               <LinearGradient colors={['rgba(0,0,0,0.45)', 'transparent', 'rgba(0,0,0,0.0)']} locations={[0, 0.35, 1]} style={StyleSheet.absoluteFill} />
             </>
           ) : null}
@@ -217,6 +231,29 @@ export default function DiagnosisScreen() {
             </>
           ) : null}
 
+          {data.guide_slug && !data.is_healthy ? (
+            <Enter index={2}>
+              <Pressable
+                onPress={() => router.push({ pathname: '/guide/[slug]', params: { slug: data.guide_slug! } })}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.guideLink, pressed && { opacity: 0.85 }]}
+              >
+                <View style={styles.guideIcon}>
+                  <Feather name="book-open" size={18} color={colors.white} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text variant="bodyStrong" color={colors.white}>
+                    Learn about {data.predicted_disease.toLowerCase()}
+                  </Text>
+                  <Text variant="small" color="rgba(255,255,255,0.75)">
+                    Symptoms, how it spreads, and how to stop it
+                  </Text>
+                </View>
+                <Feather name="arrow-right" size={18} color={colors.white} />
+              </Pressable>
+            </Enter>
+          ) : null}
+
           <Text variant="caption" color={colors.inkMuted} style={{ marginTop: spacing.xl }}>
             {data.advice_source === 'curated'
               ? 'Advice from the AgroSense crop-care guide.'
@@ -231,7 +268,7 @@ export default function DiagnosisScreen() {
             <Button label="Share with someone" icon="share-2" variant="secondary" onPress={share} />
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       <View style={[styles.topBar, { paddingTop: insets.top + spacing.xs }]}>
         <IconButton icon="arrow-left" label="Go back" onImage={!!image} onPress={() => (fresh ? router.replace('/(tabs)') : router.back())} />
@@ -277,7 +314,17 @@ function LoadingView() {
 }
 
 const styles = StyleSheet.create({
-  hero: { height: 340, backgroundColor: colors.surfaceSunken },
+  hero: { height: 340, backgroundColor: colors.surfaceSunken, overflow: 'hidden' },
+  guideLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.xxl,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    backgroundColor: colors.brand,
+  },
+  guideIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
   sheet: {
     marginTop: -radius.xl,
     backgroundColor: colors.canvas,

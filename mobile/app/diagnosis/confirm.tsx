@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiClient, getErrorMessage } from '@/api/client';
 import { queryKeys } from '@/api/hooks';
 import type { DiagnosisDetail } from '@/api/types';
+import { ScanLine } from '@/components/motion';
 import { Button } from '@/components/ui/Button';
 import { StackHeader } from '@/components/ui/Header';
 import { Banner } from '@/components/ui/Layout';
@@ -87,8 +88,9 @@ export default function ConfirmScreen() {
       {/* Framing guide */}
       <View pointerEvents="none" style={styles.frameWrap}>
         <View style={styles.frame}>
+          <ScanLine active={working} />
           {(['tl', 'tr', 'bl', 'br'] as const).map((c) => (
-            <View key={c} style={[styles.corner, styles[c]]} />
+            <View key={c} style={[styles.corner, styles[c], working && { borderColor: '#bff3c6' }]} />
           ))}
         </View>
       </View>

@@ -31,6 +31,7 @@ from app.services.catalog import (
     is_healthy_class,
     normalize_advice,
 )
+from app.services.guide import guide_slug
 from app.services.gemini_service import GeminiUnavailable, generate_treatment_advice
 from app.services.image_service import ImageProcessingError, preprocess_bytes, to_storage_jpeg
 from app.services.ml_service import predict
@@ -179,6 +180,7 @@ async def run_diagnosis_pipeline(
         "low_confidence": low_confidence,
         "crop_supported": crop_supported,
         "advice_source": advice_source,
+        "guide_slug": guide_slug(class_name),
     }
     return row, response
 
@@ -365,6 +367,7 @@ async def get_my_diagnosis(
         "processing_time_ms": d.processing_time_ms or 0,
         "channel": d.channel,
         "status": d.status,
+        "guide_slug": guide_slug(cls),
         "expert_review": {
             "is_ai_correct": review.is_ai_correct,
             "notes": review.expert_notes,

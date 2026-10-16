@@ -59,3 +59,18 @@ async def test_sms_help_and_price(client):
 async def test_admin_login_wrong_creds(client):
     r = await client.post("/api/auth/admin/login", json={"email": "nobody@x.com", "password": "nope"})
     assert r.status_code == 401
+
+
+async def test_disease_guide(client):
+    import json
+    from app.services.guide import GUIDE_PATH
+    entries = json.loads(GUIDE_PATH.read_text(encoding="utf-8"))
+    classes = json.loads((GUIDE_PATH.parents[2] / "ml" / "class_names.json").read_text())
+    sick = {c for c in classes if "healthy" not in c}
+    assert {e["class_name"] for e in entries} == sick  # every disease covered, no extras
+    assert len({e["slug"] for e in entries}) == len(entries)
+    rows = (await client.get("/api/library", params={"crop": "Tomato"})).json()
+    assert len(rows) == 9 and all(r["crop"] == "Tomato" for r in rows)
+    one = (await client.get("/api/library/tomato-late-blight")).json()
+    assert one["pathogen"] == "Phytophthora infestans" and one["symptoms"]
+    assert (await client.get("/api/library/nope")).status_code == 404
