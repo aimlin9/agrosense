@@ -220,6 +220,8 @@ async def change_password(
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Your current password is incorrect.")
 
     current_farmer.password_hash = await run_in_threadpool(hash_password, payload.new_password)
+    if current_farmer.auth_provider == "google":
+        current_farmer.auth_provider = "phone+google"
     current_farmer.token_version += 1
     await db.commit()
     await db.refresh(current_farmer)

@@ -1,72 +1,59 @@
 /**
- * Google Sign-In integration.
- * 
- * Flow:
- *   1. Configure once at app startup with our Web Client ID
- *   2. signInWithGoogle() opens native Google account picker
- *   3. User picks account → we get an idToken
- *   4. Send idToken to our backend → receive AgroSense JWT
- *   5. If profile_complete=false, mobile redirects to "Complete profile" screen
+ * Google Sign-In.
+ *
+ *   1. configureGoogleSignIn() once at startup
+ *   2. signInWithGoogle() opens the native account picker → Google ID token
+ *   3. The ID token is exchanged for an AgroSense JWT at /api/auth/google
+ *
+ * Unavailable in Expo Go (no native module) and on iOS until an iOS client
+ * ID is configured — the UI hides the button in those cases.
  */
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { Platform } from 'react-native';
 
-// Detect if running in Expo Go (where the native Google Sign-In module is unavailable)
-const isExpoGo = Constants.appOwnership === 'expo';
+import { apiClient, getErrorMessage } from '@/api/client';
 
-// Lazy-load the native module only when not in Expo Go
-let GoogleSignin: any;
-let isSuccessResponse: (response: any) => boolean;
-let statusCodes: any;
+const extra = (Constants.expoConfig?.extra ?? {}) as {
+  googleWebClientId?: string;
+  googleIosClientId?: string;
+};
+const WEB_CLIENT_ID = extra.googleWebClientId ?? '';
+const IOS_CLIENT_ID = extra.googleIosClientId ?? '';
 
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+let native: any = null; // optional native module, typed loosely on purpose
 if (!isExpoGo) {
-  // Dev build or production — load the real native module
-  const mod = require('@react-native-google-signin/google-signin');
-  GoogleSignin = mod.GoogleSignin;
-  isSuccessResponse = mod.isSuccessResponse;
-  statusCodes = mod.statusCodes;
-} else {
-  // Expo Go — stub everything so the app loads, but Google Sign-In won't actually work
-  GoogleSignin = {
-    configure: () => {},
-    hasPlayServices: async () => false,
-    signIn: async () => {
-      throw new Error('Google Sign-In requires a development build, not Expo Go');
-    },
-    signOut: async () => {},
-    revokeAccess: async () => {},
-  };
-  isSuccessResponse = () => false;
-  statusCodes = {
-    SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED',
-    IN_PROGRESS: 'IN_PROGRESS',
-    PLAY_SERVICES_NOT_AVAILABLE: 'PLAY_SERVICES_NOT_AVAILABLE',
-    SIGN_IN_REQUIRED: 'SIGN_IN_REQUIRED',
-  };
+  try {
+    // Loaded lazily: the native module doesn't exist in Expo Go.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    native = require('@react-native-google-signin/google-signin');
+  } catch {
+    native = null;
+  }
 }
 
-import { apiClient } from '@/api/client';
-
-const WEB_CLIENT_ID =
-  (Constants.expoConfig?.extra as any)?.googleWebClientId ?? '';
+export function isGoogleSignInAvailable() {
+  if (!native || !WEB_CLIENT_ID) return false;
+  if (Platform.OS === 'ios' && !IOS_CLIENT_ID) return false;
+  return Platform.OS === 'ios' || Platform.OS === 'android';
+}
 
 let configured = false;
 
 export function configureGoogleSignIn() {
-  if (configured) return;
-  if (!WEB_CLIENT_ID) {
-    console.warn('[googleAuth] No googleWebClientId set in app.json/extra');
-    return;
-  }
-  GoogleSignin.configure({
+  if (configured || !isGoogleSignInAvailable()) return;
+  native.GoogleSignin.configure({
     webClientId: WEB_CLIENT_ID,
-    offlineAccess: false, // we don't need refresh tokens — backend issues its own JWT
+    ...(IOS_CLIENT_ID ? { iosClientId: IOS_CLIENT_ID } : {}),
+    offlineAccess: false,
   });
   configured = true;
 }
 
 export interface GoogleSignInResult {
-  accessToken: string;       // AgroSense JWT
-  profileComplete: boolean;  // false → show CompleteProfile screen
+  accessToken: string;
+  profileComplete: boolean;
   farmerId: string;
 }
 
@@ -77,58 +64,60 @@ export class GoogleSignInError extends Error {
 }
 
 export async function signInWithGoogle(): Promise<GoogleSignInResult> {
+  if (!isGoogleSignInAvailable()) {
+    throw new GoogleSignInError('Google sign-in isn’t available on this device. Use your phone number instead.', 'UNAVAILABLE');
+  }
   configureGoogleSignIn();
+  const { GoogleSignin, isSuccessResponse, isErrorWithCode, statusCodes } = native;
 
-  // 1. Check Google Play Services available (Android)
-  await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-
-  // 2. Open native Google account picker
-  const result = await GoogleSignin.signIn();
-
-  if (!isSuccessResponse(result)) {
-    throw new GoogleSignInError('Sign-in cancelled or failed.', 'CANCELLED');
-  }
-
-  const idToken = result.data.idToken;
-  if (!idToken) {
-    throw new GoogleSignInError(
-      'No ID token returned from Google. Check your Web Client ID.',
-      'NO_ID_TOKEN',
-    );
-  }
-
-  // 3. Exchange Google ID token for our backend JWT
+  let idToken: string | null = null;
   try {
-    const res = await apiClient.post<{
-      access_token: string;
-      profile_complete: boolean;
-      farmer_id: string;
-    }>('/api/auth/google', { id_token: idToken });
+    if (Platform.OS === 'android') {
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    }
+    const result = await GoogleSignin.signIn();
+    if (!isSuccessResponse(result)) {
+      throw new GoogleSignInError('Sign-in cancelled.', 'CANCELLED');
+    }
+    idToken = result.data.idToken;
+  } catch (err) {
+    if (err instanceof GoogleSignInError) throw err;
+    if (isErrorWithCode?.(err)) {
+      const code = (err as { code: string }).code;
+      if (code === statusCodes.SIGN_IN_CANCELLED) throw new GoogleSignInError('Sign-in cancelled.', 'CANCELLED');
+      if (code === statusCodes.IN_PROGRESS) throw new GoogleSignInError('Sign-in is already in progress.', 'IN_PROGRESS');
+      if (code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        throw new GoogleSignInError('Google Play Services is missing or out of date on this phone.', 'PLAY_SERVICES');
+      }
+    }
+    throw new GoogleSignInError('Couldn’t sign in with Google. Please try again.', 'UNKNOWN');
+  }
 
+  if (!idToken) {
+    throw new GoogleSignInError('Google didn’t return a sign-in token. Please try again.', 'NO_ID_TOKEN');
+  }
+
+  try {
+    const res = await apiClient.post<{ access_token: string; profile_complete: boolean; farmer_id: string }>(
+      '/api/auth/google',
+      { id_token: idToken },
+    );
     return {
       accessToken: res.data.access_token,
       profileComplete: res.data.profile_complete,
       farmerId: res.data.farmer_id,
     };
-  } catch (err: any) {
-    const detail = err.response?.data?.detail ?? err.message ?? 'Backend rejected the Google token.';
-    throw new GoogleSignInError(detail, 'BACKEND_ERROR');
+  } catch (err) {
+    await signOutGoogle();
+    throw new GoogleSignInError(getErrorMessage(err, 'Google sign-in failed.'), 'BACKEND_ERROR');
   }
 }
 
 export async function signOutGoogle() {
+  if (!native || !configured) return;
   try {
-    await GoogleSignin.signOut();
+    await native.GoogleSignin.signOut();
   } catch {
-    // ignore — user might not have been signed in via Google
+    // not signed in with Google
   }
-}
-
-export function mapGoogleSignInError(err: any): string {
-  if (err?.code === statusCodes.SIGN_IN_CANCELLED) return 'Sign-in cancelled.';
-  if (err?.code === statusCodes.IN_PROGRESS) return 'Sign-in already in progress.';
-  if (err?.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-    return 'Google Play Services unavailable. Update your phone.';
-  }
-  return err?.message ?? 'Could not sign in with Google.';
 }

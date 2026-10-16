@@ -1,194 +1,120 @@
-import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Linking,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Link } from 'expo-router';
+import { useRef, useState } from 'react';
+import { TextInput, View } from 'react-native';
 
-import { useAuthStore } from '@/store/authStore';
+import { getErrorMessage } from '@/api/client';
+import { AuthShell, OrDivider } from '@/components/AuthShell';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
-
-const PRIVACY_URL = 'https://aimlin9.github.io/agrosense/legal/privacy.html';
-const TERMS_URL = 'https://aimlin9.github.io/agrosense/legal/terms.html';
+import { Button } from '@/components/ui/Button';
+import { Banner } from '@/components/ui/Layout';
+import { Text } from '@/components/ui/Text';
+import { PhoneField, TextField, toApiPhone, validatePhone } from '@/components/ui/TextField';
+import { colors, spacing } from '@/constants/theme';
+import { GoogleSignInError, isGoogleSignInAvailable } from '@/services/googleAuth';
+import { useAuthStore } from '@/store/authStore';
 
 export default function LoginScreen() {
-  const router = useRouter();
-  const { login, isLoading } = useAuthStore();
+  const login = useAuthStore((s) => s.login);
+  const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
+  const notice = useAuthStore((s) => s.notice);
+  const clearNotice = useAuthStore((s) => s.clearNotice);
+
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<{ phone?: string | null; password?: string | null; form?: string | null }>({});
+  const [busy, setBusy] = useState<'phone' | 'google' | null>(null);
+  const passwordRef = useRef<TextInput>(null);
 
-  const handleLogin = async () => {
-    if (!phone || !password) {
-      Alert.alert('Missing info', 'Please enter your phone and password.');
-      return;
-    }
+  const submit = async () => {
+    const phoneErr = validatePhone(phone);
+    const passErr = password ? null : 'Enter your password.';
+    setErrors({ phone: phoneErr, password: passErr });
+    if (phoneErr || passErr) return;
+    setBusy('phone');
+    clearNotice();
     try {
-      await login(phone, password);
-      router.replace('/(tabs)');
-    } catch (err: any) {
-      const msg = err.response?.data?.detail ?? 'Login failed. Check your credentials.';
-      Alert.alert('Login failed', msg);
+      // Navigation happens in the root layout once the token is set.
+      await login(toApiPhone(phone), password);
+    } catch (err) {
+      setErrors({ form: getErrorMessage(err, 'Couldn’t sign you in. Please try again.') });
+    } finally {
+      setBusy(null);
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const google = async () => {
+    setBusy('google');
+    setErrors({});
+    clearNotice();
     try {
-      const { profileComplete } = await useAuthStore.getState().loginWithGoogle();
-      if (!profileComplete) {
-        router.replace('/onboarding/complete-profile');
-      } else {
-        router.replace('/(tabs)');
+      await loginWithGoogle();
+    } catch (err) {
+      if (!(err instanceof GoogleSignInError && err.code === 'CANCELLED')) {
+        setErrors({ form: err instanceof Error ? err.message : 'Google sign-in failed.' });
       }
-    } catch (err: any) {
-      const msg = err?.code === 'CANCELLED' ? null : err?.message ?? 'Sign-in failed.';
-      if (msg) Alert.alert('Sign-in failed', msg);
+    } finally {
+      setBusy(null);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.inner}>
-        <Text style={styles.logo}>🌱 AgroSense</Text>
-        <Text style={styles.subtitle}>AI crop advisor for your farm</Text>
-
-        <View style={styles.form}>
-          <GoogleSignInButton
-            onPress={handleGoogleSignIn}
-            loading={isLoading}
-          />
-
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <Text style={styles.label}>Phone number</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="+233244123456"
-            keyboardType="phone-pad"
-            autoCapitalize="none"
-            value={phone}
-            onChangeText={setPhone}
-          />
-
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="At least 8 characters"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-
-          <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={isLoading}
-          >
-            <Text style={styles.buttonText}>
-              {isLoading ? 'Signing in…' : 'Sign in'}
-            </Text>
-          </TouchableOpacity>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>New to AgroSense?</Text>
-            <Link href="/(auth)/register" style={styles.link}>
-              Create an account
-            </Link>
-          </View>
-
-          <Text style={styles.disclaimer}>
-            By continuing, you agree to our{' '}
-            <Text
-              style={styles.disclaimerLink}
-              onPress={() => Linking.openURL(PRIVACY_URL)}
-            >
-              Privacy Policy
-            </Text>
-            {' '}and{' '}
-            <Text
-              style={styles.disclaimerLink}
-              onPress={() => Linking.openURL(TERMS_URL)}
-            >
-              Terms of Service
-            </Text>
-            .
+    <AuthShell
+      title="Welcome back"
+      subtitle="Sign in to check your crops, the weather and today’s market prices."
+      footer={
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: spacing.xxl }}>
+          <Text variant="body" color={colors.inkSoft}>
+            New to AgroSense?
           </Text>
+          <Link href="/(auth)/register" replace accessibilityRole="link">
+            <Text variant="bodyStrong" color={colors.brand}>
+              Create an account
+            </Text>
+          </Link>
         </View>
+      }
+    >
+      <View style={{ gap: spacing.lg }}>
+        {notice ? <Banner tone="warning" title={notice.title} message={notice.message} /> : null}
+        {errors.form ? <Banner tone="danger" message={errors.form} /> : null}
+
+        <PhoneField
+          label="Phone number"
+          value={phone}
+          onChangeText={(t) => {
+            setPhone(t);
+            if (errors.phone) setErrors((e) => ({ ...e, phone: null }));
+          }}
+          error={errors.phone}
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current?.focus()}
+        />
+        <TextField
+          ref={passwordRef}
+          label="Password"
+          value={password}
+          onChangeText={(t) => {
+            setPassword(t);
+            if (errors.password) setErrors((e) => ({ ...e, password: null }));
+          }}
+          error={errors.password}
+          secureToggle
+          autoCapitalize="none"
+          autoComplete="current-password"
+          textContentType="password"
+          returnKeyType="go"
+          onSubmitEditing={submit}
+          placeholder="Your password"
+        />
+        <Button label="Sign in" onPress={submit} loading={busy === 'phone'} disabled={!!busy} style={{ marginTop: spacing.sm }} />
       </View>
-    </KeyboardAvoidingView>
+
+      {isGoogleSignInAvailable() ? (
+        <>
+          <OrDivider />
+          <GoogleSignInButton onPress={google} loading={busy === 'google'} disabled={!!busy} />
+        </>
+      ) : null}
+    </AuthShell>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  inner: { flex: 1, justifyContent: 'center', padding: 24 },
-  logo: { fontSize: 40, fontWeight: '800', textAlign: 'center', color: '#15803d' },
-  subtitle: { fontSize: 14, textAlign: 'center', color: '#64748b', marginTop: 4, marginBottom: 32 },
-  form: { gap: 8 },
-  label: { fontSize: 13, fontWeight: '600', color: '#334155', marginTop: 12 },
-  input: {
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#16a34a',
-    borderRadius: 8,
-    paddingVertical: 14,
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: 'white', fontSize: 16, fontWeight: '700' },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20, gap: 6 },
-  footerText: { color: '#64748b' },
-  link: { color: '#15803d', fontWeight: '700' },
-
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-    gap: 12,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e2e8f0',
-  },
-  dividerText: {
-    fontSize: 12,
-    color: '#94a3b8',
-    fontWeight: '600',
-  },
-  disclaimer: {
-    fontSize: 12,
-    color: '#64748b',
-    textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 8,
-    lineHeight: 18,
-    paddingHorizontal: 16,
-  },
-  disclaimerLink: {
-    color: '#15803d',
-    fontWeight: '600',
-    textDecorationLine: 'underline',
-  },
-});

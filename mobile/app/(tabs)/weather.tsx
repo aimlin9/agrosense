@@ -1,228 +1,251 @@
-import { useQuery } from '@tanstack/react-query';
-import * as Location from 'expo-location';
-import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { useState } from 'react';
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { apiClient } from '@/api/client';
-
-interface CurrentConditions {
-  temperature_c: number | null;
-  humidity_pct: number | null;
-  precipitation_mm: number | null;
-  wind_kph: number | null;
-}
-
-interface DailyForecast {
-  date: string;
-  temp_max_c: number | null;
-  temp_min_c: number | null;
-  precipitation_mm: number | null;
-}
-
-interface WeatherResponse {
-  latitude: number;
-  longitude: number;
-  current: CurrentConditions | null;
-  daily: DailyForecast[];
-}
-
-interface AdvisoryResponse {
-  headline: string;
-  rainfall_outlook: string;
-  temperature_outlook: string;
-  recommendations: string[];
-  warnings: string[];
-}
+import { getErrorMessage } from '@/api/client';
+import { useAdvisory, useWeather } from '@/api/hooks';
+import type { DailyForecast } from '@/api/types';
+import { ScreenTitle } from '@/components/ui/Header';
+import { Banner, Card, ErrorState, SectionHeader, Skeleton } from '@/components/ui/Layout';
+import { Text } from '@/components/ui/Text';
+import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { useLocation } from '@/hooks/useLocation';
+import { relativeDay, weatherCondition } from '@/lib/format';
+import { useAuthStore } from '@/store/authStore';
 
 export default function WeatherScreen() {
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [permErr, setPermErr] = useState<string | null>(null);
-  const [placeName, setPlaceName] = useState<string>('');
+  const insets = useSafeAreaInsets();
+  const farmer = useAuthStore((s) => s.farmer);
+  const location = useLocation({ ask: true });
+  const weather = useWeather(location.coords);
+  const advisory = useAdvisory(location.coords, farmer?.primary_crop);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-  (async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      setCoords({ lat: 5.6037, lng: -0.1870 });
-      setPlaceName('Accra, Ghana');
-      setPermErr('Using Accra (location permission denied).');
-      return;
-    }
-    try {
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setCoords({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.allSettled([location.refresh(true), weather.refetch(), advisory.refetch()]);
+    setRefreshing(false);
+  };
 
-      // Reverse geocode to get a friendly place name
-      try {
-        const places = await Location.reverseGeocodeAsync({
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-        });
-        if (places[0]) {
-          const p = places[0];
-          const label = [p.city || p.subregion, p.region, p.country]
-            .filter(Boolean)
-            .slice(0, 2)
-            .join(', ');
-          setPlaceName(label || 'Your location');
-        }
-      } catch {
-        setPlaceName('Your location');
-      }
-    } catch {
-      setCoords({ lat: 5.6037, lng: -0.1870 });
-      setPlaceName('Accra, Ghana');
-      setPermErr('Couldn\'t get GPS — using Accra.');
-    }
-  })();
-}, []);
-
-  const { data: weather, isLoading: weatherLoading } = useQuery({
-    queryKey: ['weather', coords?.lat, coords?.lng],
-    enabled: !!coords,
-    queryFn: async () => {
-      const res = await apiClient.get<WeatherResponse>('/api/weather', {
-        params: { lat: coords!.lat, lng: coords!.lng },
-      });
-      return res.data;
-    },
-  });
-
-  const { data: advisory, isLoading: advisoryLoading } = useQuery({
-    queryKey: ['advisory', coords?.lat, coords?.lng],
-    enabled: !!coords,
-    queryFn: async () => {
-      const res = await apiClient.get<AdvisoryResponse>('/api/weather/advisory', {
-        params: { lat: coords!.lat, lng: coords!.lng, crop_name: 'maize', region: 'Ghana' },
-      });
-      return res.data;
-    },
-  });
-
-  if (!coords || weatherLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color="#16a34a" />
-        <Text style={{ color: '#64748b', marginTop: 12 }}>Getting weather…</Text>
-      </View>
-    );
-  }
+  const current = weather.data?.current;
+  const cond = weatherCondition(current?.weather_code);
+  const days = weather.data?.daily ?? [];
+  const today = days[0];
+  const range = days.reduce(
+    (r, d) => ({ min: Math.min(r.min, d.temp_min_c ?? r.min), max: Math.max(r.max, d.temp_max_c ?? r.max) }),
+    { min: 99, max: -99 },
+  );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 24, paddingTop: 60 }}>
-      <Text style={styles.title}>Weather</Text>
-      {placeName ? <Text style={styles.locationLabel}>📍 {placeName}</Text> : null}
-      {permErr && <Text style={styles.note}>{permErr}</Text>}
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.canvas }}
+      contentContainerStyle={{ paddingTop: insets.top + spacing.lg, paddingHorizontal: spacing.gutter, paddingBottom: spacing.xxxl }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} colors={[colors.brand]} />}
+      showsVerticalScrollIndicator={false}
+    >
+      <ScreenTitle
+        eyebrow="Weather"
+        title={location.label ?? 'Your farm'}
+        subtitle={
+          location.source === 'gps'
+            ? 'Using your current location'
+            : location.source === 'profile'
+              ? 'Using your saved farm location'
+              : location.source === 'default'
+                ? 'Showing Accra'
+                : null
+        }
+      />
 
-      {weather?.current && (
-        <View style={styles.currentCard}>
-          <Text style={styles.tempBig}>
-            {weather.current.temperature_c?.toFixed(0) ?? '—'}°C
-          </Text>
-          <View style={styles.currentMeta}>
-            <Text style={styles.metaItem}>💧 {weather.current.humidity_pct?.toFixed(0) ?? '—'}%</Text>
-            <Text style={styles.metaItem}>🌧️ {weather.current.precipitation_mm?.toFixed(1) ?? '0.0'}mm</Text>
-            <Text style={styles.metaItem}>🌬️ {weather.current.wind_kph?.toFixed(0) ?? '—'}km/h</Text>
-          </View>
-        </View>
-      )}
-
-      <Text style={styles.sectionTitle}>7-day forecast</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.forecastRow}>
-        {weather?.daily.map((day, i) => (
-          <View key={i} style={styles.dayCard}>
-            <Text style={styles.dayLabel}>
-              {new Date(day.date).toLocaleDateString(undefined, { weekday: 'short' })}
-            </Text>
-            <Text style={styles.dayTemp}>
-              {day.temp_max_c?.toFixed(0) ?? '—'}° / {day.temp_min_c?.toFixed(0) ?? '—'}°
-            </Text>
-            <Text style={styles.dayRain}>
-              💧 {day.precipitation_mm?.toFixed(1) ?? '0.0'}mm
-            </Text>
-          </View>
-        ))}
-      </ScrollView>
-
-      <Text style={styles.sectionTitle}>Planting advisory</Text>
-      {advisoryLoading ? (
-        <ActivityIndicator color="#16a34a" style={{ marginTop: 16 }} />
-      ) : advisory ? (
-        <View style={styles.advisoryCard}>
-          <Text style={styles.advisoryHeadline}>{advisory.headline}</Text>
-          <Text style={styles.advisoryRow}>🌧️ {advisory.rainfall_outlook}</Text>
-          <Text style={styles.advisoryRow}>🌡️ {advisory.temperature_outlook}</Text>
-
-          {advisory.recommendations.length > 0 && (
-            <View style={{ marginTop: 12 }}>
-              <Text style={styles.advisorySectionTitle}>Recommendations</Text>
-              {advisory.recommendations.map((r, i) => (
-                <Text key={i} style={styles.advisoryItem}>• {r}</Text>
-              ))}
-            </View>
-          )}
-
-          {advisory.warnings.length > 0 && (
-            <View style={{ marginTop: 12 }}>
-              <Text style={[styles.advisorySectionTitle, { color: '#dc2626' }]}>Warnings</Text>
-              {advisory.warnings.map((w, i) => (
-                <Text key={i} style={[styles.advisoryItem, { color: '#dc2626' }]}>⚠️ {w}</Text>
-              ))}
-            </View>
-          )}
-        </View>
+      {location.source === 'default' && location.permission === 'denied' ? (
+        <Pressable onPress={() => Linking.openSettings()} style={{ marginBottom: spacing.lg }}>
+          <Banner tone="info" title="See weather for your own farm" message="Turn on location for AgroSense in settings, or add farm coordinates in your profile." />
+        </Pressable>
       ) : null}
+
+      {!location.coords || weather.isLoading ? (
+        <View style={{ gap: spacing.md }}>
+          <Skeleton height={200} rounded={radius.xl} />
+          <Skeleton height={320} rounded={radius.lg} />
+        </View>
+      ) : weather.isError || !weather.data ? (
+        <ErrorState message={getErrorMessage(weather.error, 'The forecast is unavailable right now.')} onRetry={() => weather.refetch()} />
+      ) : (
+        <>
+          {/* Now */}
+          <View style={styles.now}>
+            <View style={styles.nowTop}>
+              <View>
+                <Text style={styles.temp} color={colors.white} tabular>
+                  {current?.temperature_c != null ? `${Math.round(current.temperature_c)}°` : '—'}
+                </Text>
+                <Text variant="bodyStrong" color={colors.white}>
+                  {cond.label}
+                </Text>
+                {today ? (
+                  <Text variant="small" color="rgba(255,255,255,0.75)">
+                    High {fmt(today.temp_max_c)} · Low {fmt(today.temp_min_c)}
+                  </Text>
+                ) : null}
+              </View>
+              <Feather name={cond.icon} size={56} color="rgba(255,255,255,0.9)" />
+            </View>
+            <View style={styles.nowStats}>
+              <NowStat icon="droplet" label="Humidity" value={current?.humidity_pct != null ? `${Math.round(current.humidity_pct)}%` : '—'} />
+              <NowStat icon="wind" label="Wind" value={current?.wind_kph != null ? `${Math.round(current.wind_kph)} km/h` : '—'} />
+              <NowStat
+                icon="cloud-rain"
+                label="Rain today"
+                value={today?.precipitation_probability_pct != null ? `${Math.round(today.precipitation_probability_pct)}%` : `${(today?.precipitation_mm ?? 0).toFixed(1)} mm`}
+              />
+            </View>
+          </View>
+          {weather.data.stale ? (
+            <Text variant="caption" color={colors.inkMuted} style={{ marginTop: spacing.sm }}>
+              Showing the last saved forecast — the live forecast is temporarily unavailable.
+            </Text>
+          ) : null}
+
+          {/* Advisory */}
+          <SectionHeader title={`Farm advice${advisory.data?.crop_name ? ` · ${advisory.data.crop_name}` : ''}`} />
+          {advisory.isLoading ? (
+            <Card>
+              <View style={{ gap: spacing.sm }}>
+                <Skeleton width="85%" height={18} />
+                <Skeleton height={14} />
+                <Skeleton width="70%" height={14} />
+              </View>
+            </Card>
+          ) : advisory.data ? (
+            <Card>
+              <Text variant="subheading">{advisory.data.headline}</Text>
+              <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
+                <Outlook icon="cloud-rain" text={advisory.data.rainfall_outlook} />
+                <Outlook icon="thermometer" text={advisory.data.temperature_outlook} />
+              </View>
+              {advisory.data.recommendations.length ? (
+                <View style={{ gap: spacing.sm + 2, marginTop: spacing.lg }}>
+                  <Text variant="overline" color={colors.inkMuted}>
+                    This week
+                  </Text>
+                  {advisory.data.recommendations.map((r, i) => (
+                    <View key={i} style={{ flexDirection: 'row', gap: spacing.sm }}>
+                      <Feather name="check" size={16} color={colors.brand} style={{ marginTop: 3 }} />
+                      <Text variant="body" style={{ flex: 1 }}>
+                        {r}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+              {advisory.data.warnings.length ? (
+                <View style={{ gap: spacing.sm, marginTop: spacing.lg }}>
+                  {advisory.data.warnings.map((w, i) => (
+                    <Banner key={i} tone="warning" message={w} />
+                  ))}
+                </View>
+              ) : null}
+            </Card>
+          ) : (
+            <Card>
+              <Text variant="small" color={colors.inkSoft}>
+                Advice is unavailable right now. Pull down to try again.
+              </Text>
+            </Card>
+          )}
+
+          {/* 7 days */}
+          <SectionHeader title="Next 7 days" />
+          <Card padded={false}>
+            {days.map((d, i) => (
+              <View key={d.date}>
+                {i > 0 ? <View style={styles.rule} /> : null}
+                <DayRow d={d} min={range.min} max={range.max} />
+              </View>
+            ))}
+          </Card>
+          <Text variant="caption" color={colors.inkMuted} style={{ marginTop: spacing.md }}>
+            Forecast data by Open-Meteo.
+          </Text>
+        </>
+      )}
     </ScrollView>
   );
 }
 
+const fmt = (t: number | null | undefined) => (t == null ? '—' : `${Math.round(t)}°`);
+
+function NowStat({ icon, label, value }: { icon: keyof typeof Feather.glyphMap; label: string; value: string }) {
+  return (
+    <View style={{ flex: 1, gap: 2 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <Feather name={icon} size={12} color="rgba(255,255,255,0.7)" />
+        <Text variant="caption" color="rgba(255,255,255,0.7)">
+          {label}
+        </Text>
+      </View>
+      <Text variant="bodyStrong" color={colors.white} tabular>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function Outlook({ icon, text }: { icon: keyof typeof Feather.glyphMap; text: string }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+      <Feather name={icon} size={15} color={colors.inkMuted} style={{ marginTop: 3 }} />
+      <Text variant="small" color={colors.inkSoft} style={{ flex: 1 }}>
+        {text}
+      </Text>
+    </View>
+  );
+}
+
+function DayRow({ d, min, max }: { d: DailyForecast; min: number; max: number }) {
+  const cond = weatherCondition(d.weather_code);
+  const span = Math.max(1, max - min);
+  const lo = d.temp_min_c ?? min;
+  const hi = d.temp_max_c ?? max;
+  const rain = d.precipitation_probability_pct;
+  return (
+    <View
+      style={styles.day}
+      accessible
+      accessibilityLabel={`${relativeDay(d.date)}: ${cond.label}, high ${fmt(d.temp_max_c)}, low ${fmt(d.temp_min_c)}${rain != null ? `, ${Math.round(rain)}% chance of rain` : ''}`}
+    >
+      <Text variant="bodyStrong" style={{ width: 82 }}>
+        {relativeDay(d.date)}
+      </Text>
+      <View style={{ width: 54, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <Feather name={cond.icon} size={17} color={cond.icon === 'sun' ? colors.sun : colors.inkSoft} />
+        {rain != null && rain >= 20 ? (
+          <Text variant="caption" color={colors.info} tabular>
+            {Math.round(rain)}%
+          </Text>
+        ) : null}
+      </View>
+      <Text variant="small" color={colors.inkMuted} tabular style={{ width: 30, textAlign: 'right' }}>
+        {fmt(d.temp_min_c)}
+      </Text>
+      <View style={styles.track}>
+        <View style={[styles.fill, { left: `${((lo - min) / span) * 100}%`, right: `${100 - ((hi - min) / span) * 100}%` }]} />
+      </View>
+      <Text variant="smallStrong" tabular style={{ width: 30 }}>
+        {fmt(d.temp_max_c)}
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
-  title: { fontSize: 24, fontWeight: '800', color: '#15803d' },
-  note: { color: '#64748b', fontSize: 12, marginTop: 4 },
-  currentCard: {
-    backgroundColor: '#16a34a',
-    borderRadius: 16,
-    padding: 24,
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  tempBig: { fontSize: 56, fontWeight: '800', color: 'white' },
-  currentMeta: { flexDirection: 'row', gap: 16, marginTop: 8 },
-  metaItem: { color: 'white', fontSize: 13 },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#0f172a', marginTop: 24, marginBottom: 8 },
-  forecastRow: { marginHorizontal: -24 },
-  dayCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 12,
-    marginLeft: 8,
-    minWidth: 80,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  dayLabel: { fontSize: 12, fontWeight: '700', color: '#0f172a' },
-  dayTemp: { fontSize: 13, color: '#334155', marginTop: 4, fontWeight: '600' },
-  dayRain: { fontSize: 11, color: '#64748b', marginTop: 4 },
-  advisoryCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  advisoryHeadline: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginBottom: 8 },
-  advisoryRow: { fontSize: 13, color: '#334155', marginTop: 4 },
-  advisorySectionTitle: { fontSize: 13, fontWeight: '700', color: '#0f172a', marginBottom: 4 },
-  advisoryItem: { fontSize: 13, color: '#475569', marginTop: 4, lineHeight: 18 },
-  locationLabel: { fontSize: 14, color: '#475569', fontWeight: '600', marginTop: 4 },
+  now: { backgroundColor: colors.brand, borderRadius: radius.xl, padding: spacing.xl, gap: spacing.xl },
+  nowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  temp: { fontFamily: fonts.display, fontSize: 72, lineHeight: 78, letterSpacing: -2 },
+  nowStats: { flexDirection: 'row', gap: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.25)', paddingTop: spacing.lg },
+  day: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.md + 2 },
+  track: { flex: 1, height: 5, borderRadius: 3, backgroundColor: colors.surfaceSunken, marginHorizontal: spacing.xs },
+  fill: { position: 'absolute', top: 0, bottom: 0, borderRadius: 3, backgroundColor: colors.sun },
+  rule: { height: StyleSheet.hairlineWidth, backgroundColor: colors.hairline, marginLeft: spacing.lg },
 });

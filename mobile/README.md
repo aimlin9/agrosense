@@ -1,50 +1,54 @@
-# Welcome to your Expo app 👋
+# AgroSense mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+React Native + Expo (SDK 54) app for Android and iOS. Expo Router for navigation, React Query for server state, Zustand for the session.
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Run it
 
 ```bash
-npm run reset-project
+cd mobile
+npm ci
+cp .env.example .env        # optional: point at a local backend
+npx expo start              # Expo Go works for everything except Google Sign-In
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Google Sign-In needs a development build (`eas build --profile development`), because it uses a native module.
 
-## Learn more
+## Checks
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npm run typecheck           # tsc --noEmit
+npm run lint                # eslint, zero warnings
+npx expo-doctor             # native dependency versions
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Builds
 
-## Join the community
+| Profile | Command | Output |
+|---|---|---|
+| development | `eas build -p android --profile development` | APK with dev client |
+| preview | `eas build -p android --profile preview` | Installable APK for testers |
+| production | `eas build -p android --profile production` / `-p ios` | Play Store AAB / App Store IPA |
 
-Join our community of developers creating universal apps.
+Before the first iOS build, set `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` (EAS secret or `.env`) so Google Sign-In is configured. Without it, the Google button is hidden on iOS and phone sign-in is used.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Structure
+
+```
+app/                 Screens (file-based routes)
+  (auth)/            Sign in, create account
+  (tabs)/            Home, Market, Scan, Weather, History + custom tab bar
+  diagnosis/         Photo confirm + result/detail
+  onboarding/        First-run slides, complete profile (after Google sign-up)
+  settings/          Account, profile & farm, password
+api/                 Axios client, React Query hooks, response types
+components/ui/       Design-system primitives (Text, Button, fields, sheets, cards)
+constants/theme.ts   Colour, type, spacing and elevation tokens
+lib/                 Formatting, photo preparation, storage, query client
+store/authStore.ts   Session: token, cached profile, sign-in/out
+```
+
+## Notes
+
+- `expo-secure-store` is pinned to 14.x on purpose (an interop bug in 15.x at the time); it's excluded from `expo install --check`.
+- Photos are resized to ≤1280px JPEG on the device before upload (handles iPhone HEIC and keeps uploads small on mobile data).
+- The app is light-mode only by design — it's used outdoors in bright sun.

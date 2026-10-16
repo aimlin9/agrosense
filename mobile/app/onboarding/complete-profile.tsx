@@ -1,261 +1,80 @@
-import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { apiClient } from '@/api/client';
-import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { apiClient, getErrorMessage } from '@/api/client';
+import type { Farmer } from '@/api/types';
+import { AuthShell } from '@/components/AuthShell';
+import { Button } from '@/components/ui/Button';
+import { Banner } from '@/components/ui/Layout';
+import { SelectField, SelectSheet } from '@/components/ui/SelectSheet';
+import { Text } from '@/components/ui/Text';
+import { PhoneField, TextField, toApiPhone, validatePhone } from '@/components/ui/TextField';
+import { CROP_OPTIONS, REGION_OPTIONS } from '@/constants/options';
+import { colors, spacing } from '@/constants/theme';
+import { firstName } from '@/lib/format';
 import { useAuthStore } from '@/store/authStore';
 
-const GHANA_REGIONS = [
-  'Ahafo',
-  'Ashanti',
-  'Bono',
-  'Bono East',
-  'Central',
-  'Eastern',
-  'Greater Accra',
-  'North East',
-  'Northern',
-  'Oti',
-  'Savannah',
-  'Upper East',
-  'Upper West',
-  'Volta',
-  'Western',
-  'Western North',
-];
-
-const CROPS = [
-  'Maize',
-  'Tomato',
-  'Cassava',
-  'Pepper (bell)',
-  'Potato',
-  'Plantain',
-  'Cocoa',
-  'Yam',
-  'Rice',
-  'Cowpea',
-  'Groundnut',
-  'Onion',
-  'Pineapple',
-  'Banana',
-];
-
 export default function CompleteProfileScreen() {
-  const router = useRouter();
-  const { farmer } = useAuthStore();
+  const farmer = useAuthStore((s) => s.farmer);
+  const setFarmer = useAuthStore((s) => s.setFarmer);
+  const logout = useAuthStore((s) => s.logout);
 
+  const [name, setName] = useState(farmer?.full_name ?? '');
   const [phone, setPhone] = useState('');
-  const [region, setRegion] = useState('');
-  const [primaryCrop, setPrimaryCrop] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [region, setRegion] = useState<string | null>(farmer?.region ?? null);
+  const [crop, setCrop] = useState<string | null>(farmer?.primary_crop ?? null);
+  const [sheet, setSheet] = useState<'region' | 'crop' | null>(null);
+  const [errors, setErrors] = useState<{ name?: string | null; phone?: string | null; form?: string | null }>({});
+  const [saving, setSaving] = useState(false);
 
-  const firstName = farmer?.full_name?.split(' ')[0] ?? 'there';
-
-  const pickRegion = () => {
-    Alert.alert(
-      'Select region',
-      'Choose your region in Ghana',
-      [
-        ...GHANA_REGIONS.map(r => ({
-          text: r,
-          onPress: () => setRegion(r),
-        })),
-        { text: 'Cancel', style: 'cancel' as const },
-      ],
-    );
-  };
-
-  const pickCrop = () => {
-    Alert.alert(
-      'Select primary crop',
-      'What is the main crop you grow?',
-      [
-        ...CROPS.map(c => ({
-          text: c,
-          onPress: () => setPrimaryCrop(c),
-        })),
-        { text: 'Cancel', style: 'cancel' as const },
-      ],
-    );
-  };
-
-  const handleSubmit = async () => {
-    if (!phone.trim()) {
-      Alert.alert('Phone required', 'We need your phone number for SMS support and account security.');
-      return;
-    }
-    setSubmitting(true);
+  const submit = async () => {
+    const next = {
+      name: name.trim() ? null : 'Tell us your name.',
+      phone: validatePhone(phone),
+    };
+    setErrors(next);
+    if (next.name || next.phone) return;
+    setSaving(true);
     try {
-      await apiClient.patch('/api/auth/me/complete-profile', {
-        phone_number: phone.trim(),
-        region: region.trim() || undefined,
-        primary_crop: primaryCrop.trim() || undefined,
+      const { data } = await apiClient.patch<Farmer>('/api/auth/me/complete-profile', {
+        phone_number: toApiPhone(phone),
+        full_name: name.trim(),
+        region: region ?? undefined,
+        primary_crop: crop ?? undefined,
       });
-      const meRes = await apiClient.get('/api/auth/me');
-      useAuthStore.setState({ farmer: meRes.data });
-      router.replace('/(tabs)');
-    } catch (err: any) {
-      const msg = err.response?.data?.detail ?? 'Could not save profile.';
-      Alert.alert('Could not save', msg);
+      setFarmer(data); // root layout routes to the app once profile_complete is true
+    } catch (err) {
+      setErrors({ form: getErrorMessage(err, 'Couldn’t save your details. Please try again.') });
     } finally {
-      setSubmitting(false);
+      setSaving(false);
     }
   };
+
+  const hello = firstName(farmer?.full_name);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <View style={styles.iconCircle}>
-          <Feather name="user" size={32} color={colors.primaryDark} />
-        </View>
-
-        <Text style={styles.title}>One more step, {firstName}</Text>
-        <Text style={styles.subtitle}>
-          We need a few details so AgroSense can give you personalized advice and SMS support.
-        </Text>
-
-        <View style={styles.form}>
-          <Text style={styles.label}>Phone number *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="+233244123456"
-            keyboardType="phone-pad"
-            autoCapitalize="none"
-            value={phone}
-            onChangeText={setPhone}
-          />
-          <Text style={styles.helper}>
-            Used for SMS diagnosis when you don't have internet.
+    <AuthShell
+      title={hello ? `Almost there, ${hello}` : 'Almost there'}
+      subtitle="Add your phone number so you can also use AgroSense by SMS, and so we can tailor advice to your farm."
+      footer={
+        <Pressable onPress={logout} style={{ alignItems: 'center', marginTop: spacing.xxl }} accessibilityRole="button">
+          <Text variant="bodyStrong" color={colors.inkSoft}>
+            Use a different account
           </Text>
+        </Pressable>
+      }
+    >
+      <View style={{ gap: spacing.lg }}>
+        {errors.form ? <Banner tone="danger" message={errors.form} /> : null}
+        <TextField label="Full name" value={name} onChangeText={setName} error={errors.name} autoCapitalize="words" />
+        <PhoneField label="Phone number" value={phone} onChangeText={setPhone} error={errors.phone} />
+        <SelectField label="Region" value={region} onPress={() => setSheet('region')} placeholder="Choose your region" />
+        <SelectField label="Main crop" value={crop} onPress={() => setSheet('crop')} placeholder="What do you grow most?" />
+        <Button label="Continue" onPress={submit} loading={saving} style={{ marginTop: spacing.sm }} />
+      </View>
 
-          <Text style={styles.label}>Region</Text>
-          <TouchableOpacity style={styles.input} onPress={pickRegion} activeOpacity={0.7}>
-            <View style={styles.pickerRow}>
-              <Text style={[styles.pickerText, !region && styles.pickerPlaceholder]}>
-                {region || 'Tap to choose'}
-              </Text>
-              <Feather name="chevron-down" size={18} color={colors.textTertiary} />
-            </View>
-          </TouchableOpacity>
-
-          <Text style={styles.label}>Primary crop</Text>
-          <TouchableOpacity style={styles.input} onPress={pickCrop} activeOpacity={0.7}>
-            <View style={styles.pickerRow}>
-              <Text style={[styles.pickerText, !primaryCrop && styles.pickerPlaceholder]}>
-                {primaryCrop || 'Tap to choose'}
-              </Text>
-              <Feather name="chevron-down" size={18} color={colors.textTertiary} />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.button, submitting && styles.buttonDisabled]}
-            onPress={handleSubmit}
-            disabled={submitting}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.buttonText}>
-              {submitting ? 'Saving…' : 'Continue to AgroSense'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <SelectSheet visible={sheet === 'region'} title="Your region" options={REGION_OPTIONS} value={region} onSelect={setRegion} onClose={() => setSheet(null)} />
+      <SelectSheet visible={sheet === 'crop'} title="Main crop" options={CROP_OPTIONS} value={crop} onSelect={setCrop} onClose={() => setSheet(null)} searchable />
+    </AuthShell>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.xl, paddingTop: 80 },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
-  },
-  title: {
-    fontSize: 26,
-    fontFamily: fonts.display,
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontFamily: fonts.regular,
-    color: colors.textSecondary,
-    marginTop: spacing.sm,
-    marginBottom: spacing.xl,
-    lineHeight: 20,
-  },
-  form: {},
-  label: {
-    fontSize: 13,
-    fontFamily: fonts.semibold,
-    color: colors.textSecondary,
-    marginTop: spacing.lg,
-    marginBottom: spacing.xs,
-  },
-  input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: 16,
-    fontFamily: fonts.regular,
-    color: colors.textPrimary,
-  },
-  pickerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  pickerText: {
-    fontSize: 16,
-    fontFamily: fonts.regular,
-    color: colors.textPrimary,
-  },
-  pickerPlaceholder: {
-    color: colors.textTertiary,
-  },
-  helper: {
-    fontSize: 12,
-    fontFamily: fonts.regular,
-    color: colors.textTertiary,
-    marginTop: spacing.xs,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: spacing.lg,
-    alignItems: 'center',
-    marginTop: spacing.xxl,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: {
-    color: 'white',
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    letterSpacing: -0.2,
-  },
-});

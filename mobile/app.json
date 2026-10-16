@@ -6,11 +6,18 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "agrosense",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.aimlin9.agrosense",
-      "supportsTablet": true
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.aimlin9.agrosense",
@@ -20,7 +27,18 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO"
+      ],
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "output": "static",
@@ -32,20 +50,31 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 300,
+          "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#0F5427",
-          "dark": {
-            "backgroundColor": "#0F5427"
-          }
+          "backgroundColor": "#0F5427"
         }
       ],
       "expo-secure-store",
       "expo-font",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "AgroSense needs access to your photos so you can choose a picture of a sick plant to diagnose.",
+          "cameraPermission": "AgroSense uses the camera to photograph sick plants for diagnosis.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "AgroSense uses your location to show the weather forecast and planting advice for your farm."
+        }
+      ],
+      [
         "@react-native-google-signin/google-signin",
         {
-          "iosUrlScheme": "com.googleusercontent.apps._REPLACE_WITH_REVERSED_IOS_CLIENT_ID_"
+          "iosUrlScheme": "com.googleusercontent.apps.placeholder"
         }
       ]
     ],
@@ -59,6 +88,7 @@
       "eas": {
         "projectId": "da00af8c-4d3c-46f5-ac3d-e667a7727f95"
       }
-    }
+    },
+    "backgroundColor": "#F5F3EC"
   }
 }

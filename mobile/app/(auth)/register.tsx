@@ -1,284 +1,158 @@
-import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Feather } from '@expo/vector-icons';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Linking,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Link } from 'expo-router';
+import { useRef, useState } from 'react';
+import { TextInput, View } from 'react-native';
+
+import { getErrorMessage } from '@/api/client';
+import { AuthShell, OrDivider } from '@/components/AuthShell';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { Button } from '@/components/ui/Button';
+import { Banner } from '@/components/ui/Layout';
+import { SelectField, SelectSheet } from '@/components/ui/SelectSheet';
+import { Text } from '@/components/ui/Text';
+import { PhoneField, TextField, toApiPhone, validatePhone } from '@/components/ui/TextField';
+import { CROP_OPTIONS, REGION_OPTIONS } from '@/constants/options';
+import { colors, spacing } from '@/constants/theme';
+import { GoogleSignInError, isGoogleSignInAvailable } from '@/services/googleAuth';
 import { useAuthStore } from '@/store/authStore';
 
-const GHANA_REGIONS = [
-  'Ahafo', 'Ashanti', 'Bono', 'Bono East', 'Central', 'Eastern',
-  'Greater Accra', 'North East', 'Northern', 'Oti', 'Savannah',
-  'Upper East', 'Upper West', 'Volta', 'Western', 'Western North',
-];
-
-const CROPS = [
-  'Apple', 'Blueberry', 'Cherry (including sour)', 'Corn (maize)',
-  'Grape', 'Orange', 'Peach', 'Pepper, bell', 'Potato', 'Raspberry',
-  'Soybean', 'Squash', 'Strawberry', 'Tomato',
-];
-
-const PRIVACY_URL = 'https://aimlin9.github.io/agrosense/legal/privacy.html';
-const TERMS_URL = 'https://aimlin9.github.io/agrosense/legal/terms.html';
+type Errors = Partial<Record<'name' | 'phone' | 'password' | 'form', string | null>>;
 
 export default function RegisterScreen() {
-  const router = useRouter();
-  const { register, isLoading } = useAuthStore();
+  const register = useAuthStore((s) => s.register);
+  const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
 
+  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
-  const [region, setRegion] = useState('');
-  const [primaryCrop, setPrimaryCrop] = useState('');
+  const [region, setRegion] = useState<string | null>(null);
+  const [crop, setCrop] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<'region' | 'crop' | null>(null);
+  const [errors, setErrors] = useState<Errors>({});
+  const [busy, setBusy] = useState<'phone' | 'google' | null>(null);
 
-  const pickFromList = (
-    title: string,
-    options: string[],
-    onSelect: (value: string) => void,
-  ) => {
-    Alert.alert(
-      title,
-      undefined,
-      [
-        ...options.map((opt) => ({ text: opt, onPress: () => onSelect(opt) })),
-        { text: 'Cancel', style: 'cancel' as const },
-      ],
-      { cancelable: true },
-    );
-  };
+  const phoneRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
 
-  const handleRegister = async () => {
-    if (!phone || !password) {
-      Alert.alert('Missing info', 'Phone and password are required.');
-      return;
-    }
-    if (password.length < 8) {
-      Alert.alert('Password too short', 'Use at least 8 characters.');
-      return;
-    }
+  const submit = async () => {
+    const next: Errors = {
+      name: name.trim() ? null : 'Tell us your name.',
+      phone: validatePhone(phone),
+      password: password.length >= 8 ? null : 'Use at least 8 characters.',
+    };
+    setErrors(next);
+    if (next.name || next.phone || next.password) return;
+    setBusy('phone');
     try {
       await register({
-        phone_number: phone,
+        full_name: name.trim(),
+        phone_number: toApiPhone(phone),
         password,
-        full_name: fullName || undefined,
-        region: region || undefined,
-        primary_crop: primaryCrop || undefined,
+        region: region ?? undefined,
+        primary_crop: crop ?? undefined,
       });
-      router.replace('/(tabs)');
-    } catch (err: any) {
-      const msg = err.response?.data?.detail ?? 'Registration failed.';
-      Alert.alert('Registration failed', msg);
+    } catch (err) {
+      setErrors({ form: getErrorMessage(err, 'Couldn’t create your account. Please try again.') });
+    } finally {
+      setBusy(null);
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const google = async () => {
+    setBusy('google');
+    setErrors({});
     try {
-      const { profileComplete } = await useAuthStore.getState().loginWithGoogle();
-      if (!profileComplete) {
-        router.replace('/onboarding/complete-profile');
-      } else {
-        router.replace('/(tabs)');
+      await loginWithGoogle();
+    } catch (err) {
+      if (!(err instanceof GoogleSignInError && err.code === 'CANCELLED')) {
+        setErrors({ form: err instanceof Error ? err.message : 'Google sign-in failed.' });
       }
-    } catch (err: any) {
-      const msg = err?.code === 'CANCELLED' ? null : err?.message ?? 'Sign-in failed.';
-      if (msg) Alert.alert('Sign-in failed', msg);
+    } finally {
+      setBusy(null);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.inner}>
-        <Text style={styles.logo}>Create account</Text>
-
-        <GoogleSignInButton
-          onPress={handleGoogleSignIn}
-          loading={isLoading}
-          label="Sign up with Google"
-        />
-
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        <Text style={styles.label}>Phone number *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="+233244123456"
-          keyboardType="phone-pad"
-          autoCapitalize="none"
-          value={phone}
-          onChangeText={setPhone}
-        />
-
-        <Text style={styles.label}>Full name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Kofi Mensah"
-          value={fullName}
-          onChangeText={setFullName}
-        />
-
-        <Text style={styles.label}>Password *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="At least 8 characters"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        <Text style={styles.label}>Region</Text>
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => pickFromList('Choose your region', GHANA_REGIONS, setRegion)}
-          activeOpacity={0.6}
-        >
-          <View style={styles.pickerRow}>
-            <Text style={[styles.pickerText, !region && styles.pickerPlaceholder]}>
-              {region || 'Tap to choose'}
-            </Text>
-            <Feather name="chevron-down" color="#94a3b8" size={18} />
-          </View>
-        </TouchableOpacity>
-
-        <Text style={styles.label}>Primary crop</Text>
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => pickFromList('Choose your primary crop', CROPS, setPrimaryCrop)}
-          activeOpacity={0.6}
-        >
-          <View style={styles.pickerRow}>
-            <Text style={[styles.pickerText, !primaryCrop && styles.pickerPlaceholder]}>
-              {primaryCrop || 'Tap to choose'}
-            </Text>
-            <Feather name="chevron-down" color="#94a3b8" size={18} />
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, isLoading && styles.buttonDisabled]}
-          onPress={handleRegister}
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? 'Creating…' : 'Create account'}
+    <AuthShell
+      title="Create your account"
+      subtitle="Free for farmers. It takes less than a minute."
+      footer={
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: spacing.xxl }}>
+          <Text variant="body" color={colors.inkSoft}>
+            Already have an account?
           </Text>
-        </TouchableOpacity>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account?</Text>
-          <Link href="/(auth)/login" style={styles.link}>
-            Sign in
+          <Link href="/(auth)/login" replace accessibilityRole="link">
+            <Text variant="bodyStrong" color={colors.brand}>
+              Sign in
+            </Text>
           </Link>
         </View>
+      }
+    >
+      {isGoogleSignInAvailable() ? (
+        <>
+          <GoogleSignInButton label="Sign up with Google" onPress={google} loading={busy === 'google'} disabled={!!busy} />
+          <OrDivider />
+        </>
+      ) : null}
 
-        <Text style={styles.disclaimer}>
-          By continuing, you agree to our{' '}
-          <Text
-            style={styles.disclaimerLink}
-            onPress={() => Linking.openURL(PRIVACY_URL)}
-          >
-            Privacy Policy
-          </Text>
-          {' '}and{' '}
-          <Text
-            style={styles.disclaimerLink}
-            onPress={() => Linking.openURL(TERMS_URL)}
-          >
-            Terms of Service
-          </Text>
-          .
-        </Text>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <View style={{ gap: spacing.lg }}>
+        {errors.form ? <Banner tone="danger" message={errors.form} /> : null}
+        <TextField
+          label="Full name"
+          value={name}
+          onChangeText={setName}
+          error={errors.name}
+          placeholder="e.g. Ama Mensah"
+          autoCapitalize="words"
+          autoComplete="name"
+          textContentType="name"
+          returnKeyType="next"
+          onSubmitEditing={() => phoneRef.current?.focus()}
+        />
+        <PhoneField
+          ref={phoneRef}
+          label="Phone number"
+          value={phone}
+          onChangeText={setPhone}
+          error={errors.phone}
+          hint="You’ll sign in with this number. It also works for SMS."
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current?.focus()}
+        />
+        <TextField
+          ref={passwordRef}
+          label="Password"
+          value={password}
+          onChangeText={setPassword}
+          error={errors.password}
+          placeholder="At least 8 characters"
+          secureToggle
+          autoCapitalize="none"
+          autoComplete="new-password"
+          textContentType="newPassword"
+        />
+        <SelectField label="Region (optional)" value={region} onPress={() => setSheet('region')} placeholder="Choose your region" />
+        <SelectField label="Main crop (optional)" value={crop} onPress={() => setSheet('crop')} placeholder="What do you grow most?" />
+        <Button label="Create account" onPress={submit} loading={busy === 'phone'} disabled={!!busy} style={{ marginTop: spacing.sm }} />
+      </View>
+
+      <SelectSheet
+        visible={sheet === 'region'}
+        title="Your region"
+        options={REGION_OPTIONS}
+        value={region}
+        onSelect={setRegion}
+        onClose={() => setSheet(null)}
+      />
+      <SelectSheet
+        visible={sheet === 'crop'}
+        title="Main crop"
+        options={CROP_OPTIONS}
+        value={crop}
+        onSelect={setCrop}
+        onClose={() => setSheet(null)}
+        searchable
+      />
+    </AuthShell>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  inner: { padding: 24, paddingTop: 60 },
-  logo: { fontSize: 28, fontWeight: '800', color: '#15803d', marginBottom: 24 },
-  label: { fontSize: 13, fontWeight: '600', color: '#334155', marginTop: 12 },
-  input: {
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    marginTop: 4,
-    minHeight: 46,
-    justifyContent: 'center',
-  },
-  pickerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  pickerText: {
-    fontSize: 16,
-    color: '#0f172a',
-    flex: 1,
-  },
-  pickerPlaceholder: {
-    color: '#94a3b8',
-  },
-  button: {
-    backgroundColor: '#16a34a',
-    borderRadius: 8,
-    paddingVertical: 14,
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: 'white', fontSize: 16, fontWeight: '700' },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 20, gap: 6 },
-  footerText: { color: '#64748b' },
-  link: { color: '#15803d', fontWeight: '700' },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-    gap: 12,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e2e8f0',
-  },
-  dividerText: {
-    fontSize: 12,
-    color: '#94a3b8',
-    fontWeight: '600',
-  },
-  disclaimer: {
-    fontSize: 12,
-    color: '#64748b',
-    textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 8,
-    lineHeight: 18,
-    paddingHorizontal: 16,
-  },
-  disclaimerLink: {
-    color: '#15803d',
-    fontWeight: '600',
-    textDecorationLine: 'underline',
-  },
-});

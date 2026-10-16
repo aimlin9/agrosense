@@ -1,40 +1,21 @@
-import * as SecureStore from 'expo-secure-store';
-import { Alert } from 'react-native';
 import { create } from 'zustand';
 
-import { apiClient, registerSessionInvalidationHandler } from '@/api/client';
+import {
+  apiClient,
+  getStoredToken,
+  isNetworkError,
+  registerSessionInvalidationHandler,
+  setStoredToken,
+} from '@/api/client';
+import type { Farmer } from '@/api/types';
+import { queryClient } from '@/lib/queryClient';
+import { getItem, removeItem, setItem } from '@/lib/storage';
 import { signInWithGoogle, signOutGoogle } from '@/services/googleAuth';
 
-interface Farmer {
-  id: string;
-  phone_number: string | null;
-  full_name: string | null;
-  email: string | null;
-  region: string | null;
-  preferred_language: string;
-  profile_picture_url?: string | null;
-  profile_complete?: boolean;
-  auth_provider?: string;
-}
+const ONBOARDING_KEY = 'onboarding_seen';
+const FARMER_CACHE_KEY = 'farmer_cache';
 
-interface AuthState {
-  token: string | null;
-  farmer: Farmer | null;
-  isLoading: boolean;
-  isInitialized: boolean;
-  hasSeenOnboarding: boolean;
-
-  // Actions
-  initialize: () => Promise<void>;
-  login: (phone: string, password: string) => Promise<void>;
-  register: (data: RegisterPayload) => Promise<void>;
-  loginWithGoogle: () => Promise<{ profileComplete: boolean }>;
-  logout: () => Promise<void>;
-  sessionInvalidated: () => Promise<void>;
-  markOnboardingSeen: () => Promise<void>;
-}
-
-interface RegisterPayload {
+export interface RegisterPayload {
   phone_number: string;
   password: string;
   full_name?: string;
@@ -42,117 +23,145 @@ interface RegisterPayload {
   primary_crop?: string;
 }
 
+type Notice = { title: string; message: string } | null;
+
+interface AuthState {
+  token: string | null;
+  farmer: Farmer | null;
+  isInitialized: boolean;
+  hasSeenOnboarding: boolean;
+  /** One-off message shown on the sign-in screen (e.g. signed out elsewhere). */
+  notice: Notice;
+
+  initialize: () => Promise<void>;
+  login: (phone: string, password: string) => Promise<void>;
+  register: (data: RegisterPayload) => Promise<void>;
+  loginWithGoogle: () => Promise<{ profileComplete: boolean }>;
+  refreshFarmer: () => Promise<Farmer | null>;
+  setFarmer: (farmer: Farmer) => void;
+  setToken: (token: string) => Promise<void>;
+  logout: () => Promise<void>;
+  clearSession: (notice?: Notice) => Promise<void>;
+  clearNotice: () => void;
+  markOnboardingSeen: () => Promise<void>;
+}
+
+async function cacheFarmer(farmer: Farmer | null) {
+  if (farmer) await setItem(FARMER_CACHE_KEY, JSON.stringify(farmer));
+  else await removeItem(FARMER_CACHE_KEY);
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   farmer: null,
-  isLoading: false,
   isInitialized: false,
   hasSeenOnboarding: false,
+  notice: null,
 
-  // Run once at app launch — load token + onboarding flag from SecureStore
+  // Runs once at launch. Uses the cached profile so the app opens instantly
+  // (and offline), then refreshes it from the server in the background.
   initialize: async () => {
     try {
-      const [token, seen] = await Promise.all([
-        SecureStore.getItemAsync('auth_token'),
-        SecureStore.getItemAsync('onboarding_seen'),
+      const [token, seen, cached] = await Promise.all([
+        getStoredToken(),
+        getItem(ONBOARDING_KEY),
+        getItem(FARMER_CACHE_KEY),
       ]);
-
       set({ hasSeenOnboarding: seen === '1' });
+      if (!token) return;
 
-      if (token) {
-        set({ token });
-        const response = await apiClient.get<Farmer>('/api/auth/me');
-        set({ farmer: response.data });
+      const cachedFarmer: Farmer | null = cached ? JSON.parse(cached) : null;
+      if (cachedFarmer) {
+        set({ token, farmer: cachedFarmer });
+        get().refreshFarmer().catch(() => {});
+        return;
       }
+      set({ token });
+      const res = await apiClient.get<Farmer>('/api/auth/me');
+      set({ farmer: res.data });
+      cacheFarmer(res.data);
     } catch (err) {
-      // Token expired or invalid — clear it
-      await SecureStore.deleteItemAsync('auth_token');
-      set({ token: null, farmer: null });
+      // Offline with no cached profile: keep the token, the user can retry.
+      if (!isNetworkError(err)) {
+        await setStoredToken(null);
+        set({ token: null, farmer: null });
+      }
     } finally {
       set({ isInitialized: true });
     }
   },
 
-  login: async (phone, password) => {
-    set({ isLoading: true });
-    try {
-      const tokenRes = await apiClient.post<{ access_token: string }>(
-        '/api/auth/login',
-        { phone_number: phone, password },
-      );
-      const token = tokenRes.data.access_token;
-      await SecureStore.setItemAsync('auth_token', token);
-      set({ token });
+  setToken: async (token) => {
+    await setStoredToken(token);
+    set({ token });
+  },
 
-      const meRes = await apiClient.get<Farmer>('/api/auth/me');
-      set({ farmer: meRes.data });
-    } finally {
-      set({ isLoading: false });
-    }
+  setFarmer: (farmer) => {
+    set({ farmer });
+    cacheFarmer(farmer);
+  },
+
+  refreshFarmer: async () => {
+    const res = await apiClient.get<Farmer>('/api/auth/me');
+    get().setFarmer(res.data);
+    return res.data;
+  },
+
+  login: async (phone, password) => {
+    const res = await apiClient.post<{ access_token: string }>('/api/auth/login', {
+      phone_number: phone,
+      password,
+    });
+    queryClient.clear();
+    await get().setToken(res.data.access_token);
+    await get().refreshFarmer();
+    set({ notice: null });
   },
 
   register: async (data) => {
-    set({ isLoading: true });
-    try {
-      await apiClient.post('/api/auth/register', data);
-      // Auto-login after register
-      await get().login(data.phone_number, data.password);
-    } finally {
-      set({ isLoading: false });
-    }
+    await apiClient.post('/api/auth/register', data);
+    await get().login(data.phone_number, data.password);
   },
 
   loginWithGoogle: async () => {
-    set({ isLoading: true });
-    try {
-      const result = await signInWithGoogle();
-
-      // Store our backend JWT
-      await SecureStore.setItemAsync('auth_token', result.accessToken);
-      set({ token: result.accessToken });
-
-      // Fetch the freshly created/looked-up farmer
-      const meRes = await apiClient.get<Farmer>('/api/auth/me');
-      set({ farmer: meRes.data });
-
-      return { profileComplete: result.profileComplete };
-    } finally {
-      set({ isLoading: false });
-    }
+    const result = await signInWithGoogle();
+    queryClient.clear();
+    await get().setToken(result.accessToken);
+    await get().refreshFarmer();
+    set({ notice: null });
+    return { profileComplete: result.profileComplete };
   },
 
   logout: async () => {
+    // Revoke server-side so the token can't be reused; don't block on it.
+    apiClient.post('/api/auth/logout', null, { timeout: 8000 }).catch(() => {});
     await signOutGoogle();
-    await SecureStore.deleteItemAsync('auth_token');
-    set({ token: null, farmer: null });
+    await get().clearSession();
   },
 
-  // Triggered when the backend tells us our token is from a stale session
-  // (i.e. the user signed in on another device). Clears state and warns the user.
-  sessionInvalidated: async () => {
-    try {
-      await SecureStore.deleteItemAsync('auth_token');
-    } catch {
-      // ignore
-    }
-    set({ token: null, farmer: null });
-    // Brief friendly alert. RN's Alert.alert is safe to call outside components.
-    Alert.alert(
-      'Signed out',
-      'You were signed in on another device. Please sign in again to continue here.',
-      [{ text: 'OK' }],
-    );
+  clearSession: async (notice = null) => {
+    await setStoredToken(null);
+    await cacheFarmer(null);
+    queryClient.clear();
+    set({ token: null, farmer: null, notice });
   },
+
+  clearNotice: () => set({ notice: null }),
 
   markOnboardingSeen: async () => {
-    await SecureStore.setItemAsync('onboarding_seen', '1');
+    await setItem(ONBOARDING_KEY, '1');
     set({ hasSeenOnboarding: true });
   },
 }));
 
-// Wire the api client interceptor to call sessionInvalidated() when it sees
-// a 401 with detail "session_invalidated". This avoids circular imports —
-// the client module exposes a registration function; we register here.
-registerSessionInvalidationHandler(() => {
-  useAuthStore.getState().sessionInvalidated();
+registerSessionInvalidationHandler((reason) => {
+  if (!useAuthStore.getState().token) return;
+  useAuthStore.getState().clearSession(
+    reason === 'other_device'
+      ? {
+          title: 'Signed out',
+          message: 'Your account was signed in on another device. Sign in again to continue here.',
+        }
+      : { title: 'Session expired', message: 'Please sign in again to continue.' },
+  );
 });

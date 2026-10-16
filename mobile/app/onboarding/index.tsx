@@ -1,272 +1,157 @@
-import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useRef, useState } from 'react';
 import {
-  Dimensions,
   FlatList,
   ImageBackground,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
   StyleSheet,
-  Text,
-  TouchableOpacity,
+  useWindowDimensions,
   View,
-  ViewToken,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, fonts, radius, shadows, spacing } from '@/constants/theme';
+import { Wordmark } from '@/components/Brand';
+import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { colors, fonts, radius, spacing } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-
-interface Slide {
-  image: any;
-  title: string;
-  body: string;
-}
-
-const slides: Slide[] = [
+const slides = [
   {
     image: require('@/assets/onboarding/slide-1-diagnose.jpg'),
-    title: 'Diagnose in 4 seconds',
-    body: 'Photograph any sick crop. Our AI identifies 38 disease classes across 14 crops with treatment advice in seconds.',
+    eyebrow: 'Diagnose',
+    title: 'Know what’s wrong with your crop in seconds.',
+    body: 'Photograph a sick leaf. AgroSense identifies the disease and tells you what to do, organic options first.',
   },
   {
     image: require('@/assets/onboarding/slide-2-plant.jpg'),
-    title: 'Plant when it pays',
-    body: 'Get 7-day weather forecasts and AI-powered planting advisories tailored to your crop and region.',
+    eyebrow: 'Plan',
+    title: 'Plant, spray and harvest with the weather.',
+    body: 'A 7-day forecast for your farm with advice written for the crop you grow.',
   },
   {
     image: require('@/assets/onboarding/slide-3-sell.jpg'),
-    title: 'Sell at the right price',
-    body: 'Live market prices from Kumasi, Techiman, Makola, Tamale, Kaneshie. Know before you sell.',
+    eyebrow: 'Sell',
+    title: 'Know the market before you travel to it.',
+    body: 'Compare prices across Kumasi, Techiman, Makola, Tamale and Kaneshie.',
   },
 ];
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { markOnboardingSeen } = useAuthStore();
-  const [activeIndex, setActiveIndex] = useState(0);
-  const flatListRef = useRef<FlatList<Slide>>(null);
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const markOnboardingSeen = useAuthStore((s) => s.markOnboardingSeen);
+  const [index, setIndex] = useState(0);
+  const listRef = useRef<FlatList>(null);
+  const isLast = index === slides.length - 1;
 
-  const onViewableItemsChanged = useRef(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      const idx = viewableItems[0]?.index;
-      if (typeof idx === 'number') setActiveIndex(idx);
-    },
-  ).current;
-
-  const goNext = async () => {
-    if (activeIndex < slides.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: activeIndex + 1 });
-    } else {
-      await markOnboardingSeen();
-      router.replace('/(auth)/register');
-    }
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const i = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (i !== index) setIndex(i);
   };
 
-  const skip = async () => {
+  const goTo = (i: number) => {
+    listRef.current?.scrollToIndex({ index: i, animated: true });
+    setIndex(i); // momentum events don't fire for programmatic scrolls everywhere
+  };
+
+  const finish = async (to: '/(auth)/register' | '/(auth)/login') => {
     await markOnboardingSeen();
-    router.replace('/(auth)/login');
+    router.replace(to);
   };
-
-  const isLast = activeIndex === slides.length - 1;
 
   return (
     <View style={styles.container}>
-      {/* Top bar floats over the photo */}
-      <View style={styles.topBar}>
-        <Text style={styles.brand}>🌱 AgroSense</Text>
-        {!isLast && (
-          <TouchableOpacity onPress={skip} hitSlop={12}>
-            <Text style={styles.skip}>Skip</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Carousel */}
+      <StatusBar style="light" />
       <FlatList
-        ref={flatListRef}
+        ref={listRef}
         data={slides}
-        keyExtractor={(item) => item.title}
-        renderItem={({ item }) => <SlideView slide={item} />}
+        keyExtractor={(s) => s.eyebrow}
         horizontal
         pagingEnabled
+        bounces={false}
         showsHorizontalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+        onMomentumScrollEnd={onScroll}
+        getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
+        renderItem={({ item }) => (
+          <ImageBackground source={item.image} style={{ width, height }} resizeMode="cover">
+            <LinearGradient
+              colors={['rgba(8,24,14,0.55)', 'rgba(8,24,14,0.05)', 'rgba(8,24,14,0.55)', 'rgba(8,24,14,0.96)']}
+              locations={[0, 0.25, 0.55, 1]}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={[styles.copy, { paddingBottom: 190 + insets.bottom }]}>
+              <Text variant="overline" color="rgba(255,255,255,0.75)">
+                {item.eyebrow}
+              </Text>
+              <Text style={styles.title} color={colors.white}>
+                {item.title}
+              </Text>
+              <Text variant="body" color="rgba(255,255,255,0.86)" style={{ fontSize: 16, lineHeight: 24 }}>
+                {item.body}
+              </Text>
+            </View>
+          </ImageBackground>
+        )}
       />
 
-      {/* Dots */}
-      <View style={styles.dots}>
-        {slides.map((_, i) => (
-          <View
-            key={i}
-            style={[styles.dot, i === activeIndex && styles.dotActive]}
-          />
-        ))}
+      <View style={[styles.top, { paddingTop: insets.top + spacing.md }]} pointerEvents="box-none">
+        <Wordmark inverse size={18} />
+        {!isLast ? (
+          <Pressable onPress={() => finish('/(auth)/login')} hitSlop={12} accessibilityRole="button">
+            <Text variant="bodyStrong" color={colors.white}>
+              Skip
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
 
-      {/* CTA */}
-      <View style={styles.ctaWrap}>
-        <TouchableOpacity
-          style={styles.cta}
-          onPress={goNext}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.ctaText}>
-            {isLast ? 'Get started' : 'Next'}
+      <View style={[styles.bottom, { paddingBottom: insets.bottom + spacing.lg }]}>
+        <View style={styles.dots}>
+          {slides.map((_, i) => (
+            <View key={i} style={[styles.dot, i === index && styles.dotActive]} />
+          ))}
+        </View>
+        <Button
+          variant="inverse"
+          label={isLast ? 'Create a free account' : 'Continue'}
+          iconRight="arrow-right"
+          onPress={() =>
+            isLast ? finish('/(auth)/register') : goTo(index + 1)
+          }
+        />
+        <Pressable onPress={() => finish('/(auth)/login')} style={styles.signIn} accessibilityRole="button">
+          <Text variant="body" color="rgba(255,255,255,0.8)">
+            Already have an account? <Text variant="bodyStrong" color={colors.white}>Sign in</Text>
           </Text>
-          <Feather name="arrow-right" size={18} color={colors.primaryDark} />
-        </TouchableOpacity>
-
-        {isLast && (
-          <TouchableOpacity onPress={skip} style={styles.signInLink}>
-            <Text style={styles.signInText}>
-              Already have an account?{' '}
-              <Text style={styles.signInBold}>Sign in</Text>
-            </Text>
-          </TouchableOpacity>
-        )}
+        </Pressable>
       </View>
     </View>
   );
 }
 
-function SlideView({ slide }: { slide: Slide }) {
-  return (
-    <ImageBackground
-      source={slide.image}
-      style={[styles.slide, { width: SCREEN_W }]}
-      imageStyle={styles.slideImage}
-    >
-      {/* Gradient overlay — transparent at top, dark green at bottom */}
-      <LinearGradient
-        colors={[
-          'rgba(15, 84, 39, 0.15)',
-          'rgba(15, 84, 39, 0.55)',
-          'rgba(15, 84, 39, 0.92)',
-        ]}
-        locations={[0, 0.55, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-      {/* Text content sits at the bottom */}
-      <View style={styles.slideContent}>
-        <Text style={styles.title}>{slide.title}</Text>
-        <Text style={styles.body}>{slide.body}</Text>
-      </View>
-    </ImageBackground>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0f5427',
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingTop: 60,
-    paddingBottom: spacing.md,
+  container: { flex: 1, backgroundColor: colors.brandDeep },
+  top: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 10,
-  },
-  brand: {
-    fontSize: 16,
-    fontFamily: fonts.bold,
-    color: 'white',
-    letterSpacing: -0.3,
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  skip: {
-    fontSize: 14,
-    fontFamily: fonts.semibold,
-    color: 'white',
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  slide: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  slideImage: {
-    resizeMode: 'cover',
-  },
-  slideContent: {
-    paddingHorizontal: spacing.xxl,
-    paddingBottom: spacing.xxxl,
-  },
-  title: {
-    fontSize: 32,
-    fontFamily: fonts.display,
-    color: 'white',
-    letterSpacing: -0.6,
-    marginBottom: spacing.md,
-    lineHeight: 38,
-  },
-  body: {
-    fontSize: 15,
-    fontFamily: fonts.regular,
-    color: 'rgba(255, 255, 255, 0.92)',
-    lineHeight: 22,
-  },
-  dots: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.lg,
-    backgroundColor: '#0f5427',
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-  },
-  dotActive: {
-    backgroundColor: 'white',
-    width: 24,
-  },
-  ctaWrap: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: 40,
-    backgroundColor: '#0f5427',
-  },
-  cta: {
-    backgroundColor: 'white',
-    borderRadius: radius.lg,
-    paddingVertical: spacing.lg,
-    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    ...shadows.hero,
+    paddingHorizontal: spacing.gutter + 4,
   },
-  ctaText: {
-    color: colors.primaryDark,
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    letterSpacing: -0.2,
-  },
-  signInLink: {
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  signInText: {
-    fontSize: 14,
-    fontFamily: fonts.regular,
-    color: 'rgba(255, 255, 255, 0.85)',
-  },
-  signInBold: {
-    fontFamily: fonts.bold,
-    color: 'white',
-  },
+  copy: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: spacing.gutter + 4, gap: spacing.md },
+  title: { fontFamily: fonts.display, fontSize: 34, lineHeight: 40, letterSpacing: -0.8 },
+  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.gutter + 4, gap: spacing.lg },
+  dots: { flexDirection: 'row', gap: 6 },
+  dot: { width: 6, height: 6, borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.35)' },
+  dotActive: { width: 22, backgroundColor: colors.white },
+  signIn: { alignItems: 'center', paddingVertical: spacing.xs },
 });

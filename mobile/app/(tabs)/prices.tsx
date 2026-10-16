@@ -1,105 +1,182 @@
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { useEffect, useMemo, useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { apiClient } from '@/api/client';
-import { CropSelector } from '@/components/CropSelector';
+import { getErrorMessage } from '@/api/client';
+import { useLatestPrices } from '@/api/hooks';
+import type { LatestPrice } from '@/api/types';
+import { Sparkline } from '@/components/DataViz';
+import { ScreenTitle } from '@/components/ui/Header';
+import { Card, Chip, EmptyState, ErrorState, SectionHeader, Skeleton } from '@/components/ui/Layout';
+import { Text } from '@/components/ui/Text';
+import { colors, fonts, radius, spacing } from '@/constants/theme';
+import { formatCedis, timeAgo } from '@/lib/format';
+import { useAuthStore } from '@/store/authStore';
 
-interface MarketPrice {
-  id: string;
-  crop_name: string;
-  market_name: string;
-  region: string | null;
-  price_per_kg: string | null;
-  price_per_bag: string | null;
-  price_trend: string | null;
-  recorded_at: string;
-}
+const shortMarket = (m: string) => m.replace(/ (Central )?Market$/, '');
 
 export default function PricesScreen() {
-  const [cropId, setCropId] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
+  const farmer = useAuthStore((s) => s.farmer);
+  const q = useLatestPrices(null);
+  const [crop, setCrop] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['prices', cropId],
-    queryFn: async () => {
-      const params = cropId ? { crop_id: cropId, limit: 20 } : { limit: 20 };
-      const res = await apiClient.get<MarketPrice[]>('/api/prices', { params });
-      return res.data;
-    },
-  });
+  const cropNames = useMemo(() => {
+    const names = Array.from(new Set((q.data ?? []).map((p) => p.crop_name)));
+    const first = ['Tomato', 'Maize', 'Bell pepper', 'Potato', 'Orange'];
+    return names.sort((a, b) => {
+      const ia = first.indexOf(a);
+      const ib = first.indexOf(b);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
+    });
+  }, [q.data]);
+
+  useEffect(() => {
+    if (crop || !cropNames.length) return;
+    const wanted = (farmer?.primary_crop ?? '').toLowerCase();
+    setCrop(cropNames.find((c) => c.toLowerCase() === wanted) ?? cropNames[0]);
+  }, [cropNames, crop, farmer?.primary_crop]);
+
+  const rows = useMemo(
+    () => (q.data ?? []).filter((p) => p.crop_name === crop).sort((a, b) => +b.price_per_kg - +a.price_per_kg),
+    [q.data, crop],
+  );
+  const avg = rows.length ? rows.reduce((s, p) => s + parseFloat(p.price_per_kg), 0) / rows.length : null;
+  const best = rows[0];
+  const cheapest = rows[rows.length - 1];
+  const indicative = rows.some((p) => p.source === 'indicative' || p.source === 'seeded');
+  const updated = rows.reduce<string | null>((m, p) => (!m || p.recorded_at > m ? p.recorded_at : m), null);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await q.refetch();
+    setRefreshing(false);
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Market prices</Text>
-      <Text style={styles.subtitle}>Filter by crop</Text>
-
-      <View style={styles.cropBox}>
-        <CropSelector value={cropId} onChange={setCropId} />
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.canvas }}
+      contentContainerStyle={{ paddingTop: insets.top + spacing.lg, paddingBottom: spacing.xxxl }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} colors={[colors.brand]} />}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={{ paddingHorizontal: spacing.gutter }}>
+        <ScreenTitle eyebrow="Market" title="Crop prices" subtitle="Price per kilogram across major Ghanaian markets." />
       </View>
 
-      {isLoading ? (
-        <ActivityIndicator color="#16a34a" style={{ marginTop: 24 }} />
-      ) : !data || data.length === 0 ? (
-        <Text style={styles.empty}>No price data yet for this crop.</Text>
-      ) : (
-        <FlatList
-          data={data}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          renderItem={({ item }) => <PriceCard item={item} />}
-          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-        />
-      )}
+      {cropNames.length > 0 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          {cropNames.map((c) => (
+            <Chip key={c} label={c} selected={c === crop} onPress={() => setCrop(c)} />
+          ))}
+        </ScrollView>
+      ) : null}
+
+      <View style={{ paddingHorizontal: spacing.gutter }}>
+        {q.isLoading ? (
+          <View style={{ gap: spacing.md }}>
+            <Skeleton height={150} rounded={radius.lg} />
+            <Skeleton height={260} rounded={radius.lg} />
+          </View>
+        ) : q.isError ? (
+          <ErrorState message={getErrorMessage(q.error)} onRetry={() => q.refetch()} />
+        ) : rows.length === 0 ? (
+          <EmptyState icon="bar-chart-2" title="No prices yet" message="We don’t have recent prices for this crop. Pull down to refresh." />
+        ) : (
+          <>
+            <View style={styles.summary}>
+              <Text variant="overline" color="rgba(255,255,255,0.7)">
+                {crop} · average
+              </Text>
+              <Text style={styles.avg} color={colors.white} tabular>
+                {formatCedis(avg)}
+                <Text style={styles.avgUnit} color="rgba(255,255,255,0.7)">
+                  {' '}/kg
+                </Text>
+              </Text>
+              <View style={styles.summaryRow}>
+                <SummaryStat icon="arrow-up-right" label="Best place to sell" value={`${shortMarket(best.market_name)} · ${formatCedis(best.price_per_kg)}`} />
+                <SummaryStat icon="arrow-down-left" label="Cheapest to buy" value={`${shortMarket(cheapest.market_name)} · ${formatCedis(cheapest.price_per_kg)}`} />
+              </View>
+            </View>
+
+            <SectionHeader title="By market" />
+            <Card padded={false}>
+              {rows.map((p, i) => (
+                <View key={p.market_name}>
+                  {i > 0 ? <View style={styles.rule} /> : null}
+                  <MarketRow p={p} />
+                </View>
+              ))}
+            </Card>
+
+            <Text variant="caption" color={colors.inkMuted} style={{ marginTop: spacing.lg }}>
+              {indicative
+                ? 'Indicative wholesale prices, updated daily. Prices at the market gate can differ — confirm before you travel.'
+                : 'Wholesale prices reported by market surveyors.'}
+              {updated ? ` Updated ${timeAgo(updated).toLowerCase()}.` : ''}
+            </Text>
+          </>
+        )}
+      </View>
+    </ScrollView>
+  );
+}
+
+function SummaryStat({ icon, label, value }: { icon: keyof typeof Feather.glyphMap; label: string; value: string }) {
+  return (
+    <View style={{ flex: 1, gap: 2 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <Feather name={icon} size={12} color="rgba(255,255,255,0.7)" />
+        <Text variant="caption" color="rgba(255,255,255,0.7)">
+          {label}
+        </Text>
+      </View>
+      <Text variant="smallStrong" color={colors.white} numberOfLines={1}>
+        {value}
+      </Text>
     </View>
   );
 }
 
-function PriceCard({ item }: { item: MarketPrice }) {
-  const trend = item.price_trend;
-  const trendIcon = trend === 'up' ? '📈' : trend === 'down' ? '📉' : '➡️';
-  const trendColor = trend === 'up' ? '#dc2626' : trend === 'down' ? '#16a34a' : '#64748b';
-
+function MarketRow({ p }: { p: LatestPrice }) {
+  const change = p.change_pct_7d;
+  const tone = p.trend === 'up' ? colors.success : p.trend === 'down' ? colors.danger : colors.inkMuted;
+  const icon = p.trend === 'up' ? 'trending-up' : p.trend === 'down' ? 'trending-down' : 'minus';
   return (
-    <View style={styles.card}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.market}>{item.market_name}</Text>
-        <Text style={styles.crop}>{item.crop_name}{item.region ? ` · ${item.region}` : ''}</Text>
+    <View style={styles.row} accessible accessibilityLabel={`${p.market_name}, ${formatCedis(p.price_per_kg)} per kilogram`}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text variant="bodyStrong" numberOfLines={1}>
+          {shortMarket(p.market_name)}
+        </Text>
+        <Text variant="caption" color={colors.inkMuted}>
+          {p.region}
+        </Text>
       </View>
-      <View style={styles.priceColumn}>
-        <Text style={styles.price}>GH₵ {parseFloat(item.price_per_kg ?? '0').toFixed(2)}</Text>
-        <Text style={styles.priceLabel}>per kg</Text>
-        {trend && (
-          <Text style={[styles.trend, { color: trendColor }]}>{trendIcon} {trend}</Text>
-        )}
+      <Sparkline values={p.history.map(Number)} color={tone} width={64} height={26} />
+      <View style={{ alignItems: 'flex-end', minWidth: 86 }}>
+        <Text variant="bodyStrong" tabular>
+          {formatCedis(p.price_per_kg)}
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+          <Feather name={icon} size={12} color={tone} />
+          <Text variant="caption" color={tone} tabular>
+            {change == null ? 'steady' : `${change > 0 ? '+' : ''}${change.toFixed(1)}% wk`}
+          </Text>
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, paddingTop: 60, backgroundColor: '#f8fafc' },
-  title: { fontSize: 24, fontWeight: '800', color: '#15803d' },
-  subtitle: { fontSize: 13, fontWeight: '600', color: '#64748b', marginTop: 16, marginBottom: 8 },
-  cropBox: { marginHorizontal: -24, paddingHorizontal: 24, marginBottom: 16 },
-  card: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  market: { fontSize: 15, fontWeight: '700', color: '#0f172a' },
-  crop: { fontSize: 12, color: '#64748b', marginTop: 2 },
-  priceColumn: { alignItems: 'flex-end' },
-  price: { fontSize: 18, fontWeight: '800', color: '#15803d' },
-  priceLabel: { fontSize: 11, color: '#94a3b8' },
-  trend: { fontSize: 11, fontWeight: '600', marginTop: 4 },
-  empty: { textAlign: 'center', color: '#64748b', marginTop: 40 },
+  chips: { gap: spacing.sm, paddingHorizontal: spacing.gutter, paddingBottom: spacing.lg },
+  summary: { backgroundColor: colors.brand, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.xs },
+  avg: { fontFamily: fonts.display, fontSize: 40, lineHeight: 46, letterSpacing: -1 },
+  avgUnit: { fontFamily: fonts.medium, fontSize: 15 },
+  summaryRow: { flexDirection: 'row', gap: spacing.lg, marginTop: spacing.md },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md + 2 },
+  rule: { height: StyleSheet.hairlineWidth, backgroundColor: colors.hairline, marginLeft: spacing.lg },
 });

@@ -45,7 +45,9 @@ def phone_lookup_candidates(raw: str) -> list[str]:
     try:
         n = normalize_phone(raw)
         out.append(n)
-        out.append("0" + n[4:] if n.startswith("+233") else n)
+        out.append(n[1:])  # stored without the plus
+        if n.startswith("+233"):
+            out.append("0" + n[4:])  # stored in local format
     except InvalidPhoneNumber:
         pass
     return list(dict.fromkeys(out))

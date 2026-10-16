@@ -1,140 +1,133 @@
-import { useQuery } from '@tanstack/react-query';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { apiClient } from '@/api/client';
+import { getErrorMessage } from '@/api/client';
+import { useDiagnosisHistory } from '@/api/hooks';
+import { DiagnosisRow } from '@/components/DiagnosisRow';
+import { ScreenTitle } from '@/components/ui/Header';
+import { Chip, EmptyState, ErrorState, Skeleton } from '@/components/ui/Layout';
+import { colors, radius, spacing } from '@/constants/theme';
 
-interface DiagnosisListItem {
-  id: string;
-  crop_name: string;
-  predicted_disease: string | null;
-  confidence: number;
-  is_healthy: boolean;
-  image_url: string;
-  created_at: string;
-}
+type Filter = 'all' | 'problems' | 'healthy';
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const { data, isLoading, refetch, isFetching } = useQuery({
-    queryKey: ['diagnoses'],
-    queryFn: async () => {
-      const res = await apiClient.get<DiagnosisListItem[]>('/api/diagnoses');
-      return res.data;
-    },
-  });
+  const insets = useSafeAreaInsets();
+  const q = useDiagnosisHistory();
+  const [filter, setFilter] = useState<Filter>('all');
+  const [refreshing, setRefreshing] = useState(false);
+  const firstFocus = useRef(true);
 
-  // Refetch whenever this tab regains focus (e.g., after a new diagnosis)
-  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
+  // Refresh when returning to the tab (e.g. after a new scan elsewhere).
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      q.refetch();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  );
 
-  if (isLoading) {
+  const all = useMemo(() => q.data?.pages.flat() ?? [], [q.data]);
+  const items = useMemo(
+    () => (filter === 'all' ? all : all.filter((d) => (filter === 'healthy' ? d.is_healthy : !d.is_healthy))),
+    [all, filter],
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await q.refetch();
+    setRefreshing(false);
+  };
+
+  const header = (
+    <View style={{ paddingTop: insets.top + spacing.lg }}>
+      <ScreenTitle eyebrow="History" title="Your scans" subtitle={all.length ? `${all.length}${q.hasNextPage ? '+' : ''} saved diagnoses` : null} />
+      {all.length > 0 ? (
+        <View style={styles.filters}>
+          <Chip label="All" selected={filter === 'all'} onPress={() => setFilter('all')} />
+          <Chip label="Problems" selected={filter === 'problems'} onPress={() => setFilter('problems')} />
+          <Chip label="Healthy" selected={filter === 'healthy'} onPress={() => setFilter('healthy')} />
+        </View>
+      ) : null}
+    </View>
+  );
+
+  if (q.isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color="#16a34a" />
-      </View>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.emptyEmoji}>📭</Text>
-        <Text style={styles.emptyTitle}>No diagnoses yet</Text>
-        <Text style={styles.emptyBody}>Take a photo of a sick plant to start.</Text>
-        <TouchableOpacity style={styles.cta} onPress={() => router.push('/(tabs)/diagnose')}>
-          <Text style={styles.ctaText}>Diagnose now</Text>
-        </TouchableOpacity>
+      <View style={styles.screen}>
+        <View style={{ paddingHorizontal: spacing.gutter }}>{header}</View>
+        <View style={{ paddingHorizontal: spacing.gutter, gap: spacing.md }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <View key={i} style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+              <Skeleton width={52} height={52} rounded={radius.sm} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton width="60%" height={14} />
+                <Skeleton width="40%" height={12} />
+              </View>
+            </View>
+          ))}
+        </View>
       </View>
     );
   }
 
   return (
     <FlatList
-      style={styles.container}
-      contentContainerStyle={{ padding: 16 }}
-      ListHeaderComponent={
-        <Text style={styles.title}>Your diagnoses</Text>
+      style={styles.screen}
+      contentContainerStyle={{ paddingHorizontal: spacing.gutter, paddingBottom: spacing.xxxl, flexGrow: 1 }}
+      data={items}
+      keyExtractor={(d) => d.id}
+      ListHeaderComponent={header}
+      renderItem={({ item, index }) => (
+        <View
+          style={[
+            styles.item,
+            index === 0 && styles.first,
+            index === items.length - 1 && styles.last,
+          ]}
+        >
+          {index > 0 ? <View style={styles.sep} /> : null}
+          <DiagnosisRow item={item} />
+        </View>
+      )}
+      onEndReachedThreshold={0.4}
+      onEndReached={() => q.hasNextPage && !q.isFetchingNextPage && q.fetchNextPage()}
+      ListFooterComponent={q.isFetchingNextPage ? <ActivityIndicator color={colors.brand} style={{ marginTop: spacing.lg }} /> : null}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} colors={[colors.brand]} />}
+      ListEmptyComponent={
+        q.isError ? (
+          <ErrorState message={getErrorMessage(q.error)} onRetry={() => q.refetch()} />
+        ) : all.length === 0 ? (
+          <EmptyState
+            icon="camera"
+            title="No scans yet"
+            message="When you photograph a plant, the diagnosis and treatment plan are saved here so you can come back to them."
+            actionLabel="Scan your first plant"
+            onAction={() => router.push('/(tabs)/diagnose')}
+          />
+        ) : (
+          <EmptyState icon="filter" title="Nothing here" message="No scans match this filter." />
+        )
       }
-      data={data}
-      keyExtractor={(item) => item.id}
-      refreshControl={
-        <RefreshControl refreshing={isFetching} onRefresh={refetch} tintColor="#16a34a" />
-      }
-      renderItem={({ item }) => <DiagnosisCard item={item} />}
-      ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
     />
   );
 }
 
-function DiagnosisCard({ item }: { item: DiagnosisListItem }) {
-  const router = useRouter();
-  const date = new Date(item.created_at);
-  const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-  const confPct = Math.round(item.confidence * 100);
-  const isHealthy = item.is_healthy;
-
-  return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => router.push(`/diagnosis/${item.id}`)}
-      activeOpacity={0.7}
-    >
-      <Image source={{ uri: item.image_url }} style={styles.thumb} />
-      <View style={styles.cardBody}>
-        <Text style={styles.cropName}>{item.crop_name}</Text>
-        <Text style={[styles.diseaseName, { color: isHealthy ? '#16a34a' : '#0f172a' }]}>
-          {item.predicted_disease ?? 'Unknown'}
-        </Text>
-        <View style={styles.metaRow}>
-          <Text style={styles.confBadge}>{confPct}%</Text>
-          <Text style={styles.metaTime}>{dateStr} · {timeStr}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc', paddingTop: 40 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#f8fafc' },
-  title: { fontSize: 24, fontWeight: '800', color: '#15803d', marginBottom: 16 },
-  card: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+  screen: { flex: 1, backgroundColor: colors.canvas },
+  filters: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
+  item: {
+    backgroundColor: colors.surface,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.hairline,
   },
-  thumb: { width: 90, height: 90, backgroundColor: '#e2e8f0' },
-  cardBody: { flex: 1, padding: 12, justifyContent: 'center' },
-  cropName: { fontSize: 12, color: '#64748b', fontWeight: '600' },
-  diseaseName: { fontSize: 15, fontWeight: '700', marginTop: 2 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
-  confBadge: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#15803d',
-    backgroundColor: '#dcfce7',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
-  },
-  metaTime: { fontSize: 12, color: '#94a3b8' },
-  emptyEmoji: { fontSize: 64, marginBottom: 12 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#0f172a' },
-  emptyBody: { fontSize: 14, color: '#64748b', marginTop: 4, textAlign: 'center' },
-  cta: { marginTop: 24, backgroundColor: '#16a34a', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
-  ctaText: { color: 'white', fontWeight: '700', fontSize: 15 },
+  first: { borderTopWidth: StyleSheet.hairlineWidth, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, overflow: 'hidden' },
+  last: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomLeftRadius: radius.lg, borderBottomRightRadius: radius.lg, overflow: 'hidden' },
+  sep: { height: StyleSheet.hairlineWidth, backgroundColor: colors.hairline, marginLeft: spacing.lg + 52 + spacing.md },
 });

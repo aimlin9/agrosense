@@ -1,78 +1,112 @@
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-  useFonts,
-} from '@expo-google-fonts/inter';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack, useRouter, useSegments } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import * as Haptics from 'expo-haptics';
+import { Tabs } from 'expo-router';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors } from '@/constants/theme';
-import { useAuthStore } from '@/store/authStore';
+import { Text } from '@/components/ui/Text';
+import { colors, fonts, shadows, spacing } from '@/constants/theme';
 
-// Keep splash on screen until fonts load — prevents font swap flash.
-SplashScreen.preventAutoHideAsync().catch(() => {});
+const TABS: Record<string, { label: string; icon: keyof typeof Feather.glyphMap }> = {
+  index: { label: 'Home', icon: 'home' },
+  prices: { label: 'Market', icon: 'trending-up' },
+  diagnose: { label: 'Scan', icon: 'camera' },
+  weather: { label: 'Weather', icon: 'cloud' },
+  history: { label: 'History', icon: 'clock' },
+};
 
-export default function RootLayout() {
-  const router = useRouter();
-  const segments = useSegments();
-  const { token, isInitialized, initialize } = useAuthStore();
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
-  }));
-
-  const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-  });
-
-  useEffect(() => {
-    initialize();
-  }, []);
-
-  useEffect(() => {
-    if (fontsLoaded && isInitialized) {
-      SplashScreen.hideAsync().catch(() => {});
-    }
-  }, [fontsLoaded, isInitialized]);
-
-  useEffect(() => {
-    if (!isInitialized || !fontsLoaded) return;
-    const inAuthGroup = segments[0] === '(auth)';
-    if (!token && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } else if (token && inAuthGroup) {
-      router.replace('/(tabs)');
-    }
-  }, [token, isInitialized, fontsLoaded, segments]);
-
-  if (!isInitialized || !fontsLoaded) {
-    return (
-      <View style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.background,
-      }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-
+function TabBar({ state, navigation }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
   return (
-    <QueryClientProvider client={queryClient}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-      </Stack>
-    </QueryClientProvider>
+    <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
+      {state.routes.map((route, index) => {
+        const meta = TABS[route.name];
+        if (!meta) return null;
+        const focused = state.index === index;
+        const onPress = () => {
+          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          if (!focused && !event.defaultPrevented) {
+            Haptics.selectionAsync().catch(() => {});
+            navigation.navigate(route.name);
+          }
+        };
+
+        if (route.name === 'diagnose') {
+          return (
+            <Pressable
+              key={route.key}
+              onPress={onPress}
+              accessibilityRole="button"
+              accessibilityLabel="Scan a plant"
+              accessibilityState={{ selected: focused }}
+              style={styles.item}
+            >
+              <View style={[styles.scan, focused && { backgroundColor: colors.brandDeep }]}>
+                <Feather name="camera" size={22} color={colors.white} />
+              </View>
+              <Text style={[styles.label, { color: focused ? colors.brand : colors.inkMuted }]}>{meta.label}</Text>
+            </Pressable>
+          );
+        }
+
+        return (
+          <Pressable
+            key={route.key}
+            onPress={onPress}
+            accessibilityRole="button"
+            accessibilityLabel={meta.label}
+            accessibilityState={{ selected: focused }}
+            style={styles.item}
+          >
+            <View style={[styles.iconWrap, focused && { backgroundColor: colors.brandTint }]}>
+              <Feather name={meta.icon} size={20} color={focused ? colors.brand : colors.inkMuted} />
+            </View>
+            <Text style={[styles.label, { color: focused ? colors.brand : colors.inkMuted }]}>{meta.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
+
+export default function TabsLayout() {
+  return (
+    <Tabs
+      tabBar={(props) => <TabBar {...props} />}
+      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.canvas } }}
+    >
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="prices" />
+      <Tabs.Screen name="diagnose" />
+      <Tabs.Screen name="weather" />
+      <Tabs.Screen name="history" />
+    </Tabs>
+  );
+}
+
+const styles = StyleSheet.create({
+  bar: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.hairline,
+    paddingTop: spacing.sm,
+    ...shadows.soft,
+  },
+  item: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 3 },
+  iconWrap: { width: 48, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  label: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 14 },
+  scan: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -22,
+    borderWidth: 4,
+    borderColor: colors.surface,
+    ...shadows.raised,
+  },
+});
