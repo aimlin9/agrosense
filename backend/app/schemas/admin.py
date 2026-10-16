@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 class AdminFarmerListItem(BaseModel):
     id: UUID
-    phone_number: str
+    phone_number: str | None = None
     full_name: str | None = None
     region: str | None = None
     primary_crop: str | None = None
@@ -20,8 +20,8 @@ class AdminFarmerListItem(BaseModel):
 class AdminDiagnosisListItem(BaseModel):
     id: UUID
     farmer_id: UUID
-    farmer_phone: str
-    crop_name: str
+    farmer_phone: str | None = None
+    crop_name: str | None = None
     predicted_disease: str | None = None
     confidence_score: float
     is_healthy: bool
@@ -44,17 +44,17 @@ class AdminStats(BaseModel):
 
 class FarmerDetailDiagnosis(BaseModel):
     id: UUID
-    crop_name: str
+    crop_name: str | None = None
     predicted_disease: str | None = None
     confidence_score: float
     is_healthy: bool
-    image_url: str
+    image_url: str | None = None
     created_at: datetime
 
 
 class FarmerDetail(BaseModel):
     id: UUID
-    phone_number: str
+    phone_number: str | None = None
     full_name: str | None = None
     region: str | None = None
     district: str | None = None

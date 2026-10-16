@@ -11,6 +11,7 @@ from app.models.farm_plot import FarmPlot
 from app.models.farmer import Farmer
 from app.schemas.farm_plot import FarmPlotCreate, FarmPlotResponse, FarmPlotUpdate
 from app.services.auth_dependencies import get_current_farmer
+from app.services.catalog import crop_display_name
 
 
 router = APIRouter(prefix="/api/plots", tags=["plots"])
@@ -20,7 +21,7 @@ async def _to_response(plot: FarmPlot, db: AsyncSession) -> FarmPlotResponse:
     crop_name = None
     if plot.crop_id:
         crop = (await db.execute(select(Crop).where(Crop.id == plot.crop_id))).scalar_one_or_none()
-        crop_name = crop.name if crop else None
+        crop_name = crop_display_name(crop.name) if crop else None
     return FarmPlotResponse(
         id=plot.id,
         farmer_id=plot.farmer_id,

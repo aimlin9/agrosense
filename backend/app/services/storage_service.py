@@ -14,19 +14,35 @@ from botocore.client import Config
 from app.config import settings
 
 
+class StorageUnavailable(RuntimeError):
+    """R2 isn't configured or rejected the upload."""
+
+
 # ─── boto3 client setup ──────────────────────────────────────────
-# Created once at module import. boto3 clients are thread-safe and connection-pooled,
-# so reusing one across the app is the recommended pattern.
-_r2_client = boto3.client(
-    "s3",
-    endpoint_url=settings.r2_endpoint_url,
-    aws_access_key_id=settings.r2_access_key_id,
-    aws_secret_access_key=settings.r2_secret_access_key,
-    config=Config(
-        signature_version="s3v4",
-        region_name="auto",  # R2 ignores region but boto3 requires one
-    ),
-)
+# Created lazily so the API boots even when R2 isn't configured (local dev,
+# tests). boto3 clients are thread-safe and connection-pooled.
+_client = None
+
+
+def _r2_client():
+    global _client
+    if not settings.r2_configured:
+        raise StorageUnavailable("R2 storage is not configured")
+    if _client is None:
+        _client = boto3.client(
+            "s3",
+            endpoint_url=settings.r2_endpoint_url,
+            aws_access_key_id=settings.r2_access_key_id,
+            aws_secret_access_key=settings.r2_secret_access_key,
+            config=Config(
+                signature_version="s3v4",
+                region_name="auto",  # R2 ignores region but boto3 requires one
+                connect_timeout=5,
+                read_timeout=20,
+                retries={"max_attempts": 2},
+            ),
+        )
+    return _client
 
 
 def _build_object_key(original_filename: str, prefix: str = "diagnoses") -> str:
@@ -62,14 +78,20 @@ def upload_image(
     """
     object_key = _build_object_key(original_filename, prefix=prefix)
     
-    _r2_client.upload_fileobj(
-        Fileobj=BytesIO(file_bytes),
-        Bucket=settings.r2_bucket_name,
-        Key=object_key,
-        ExtraArgs={
-            "ContentType": content_type,
-        },
-    )
+    try:
+        _r2_client().upload_fileobj(
+            Fileobj=BytesIO(file_bytes),
+            Bucket=settings.r2_bucket_name,
+            Key=object_key,
+            ExtraArgs={
+                "ContentType": content_type,
+                "CacheControl": "public, max-age=31536000, immutable",
+            },
+        )
+    except StorageUnavailable:
+        raise
+    except Exception as e:
+        raise StorageUnavailable(f"Upload failed: {e}") from e
     
     # Construct the public URL using the bucket's public r2.dev domain
     public_url = f"{settings.r2_public_url.rstrip('/')}/{object_key}"
@@ -104,7 +126,7 @@ def delete_object_by_url(url: str) -> bool:
         return False
     
     try:
-        _r2_client.delete_object(
+        _r2_client().delete_object(
             Bucket=settings.r2_bucket_name,
             Key=object_key,
         )

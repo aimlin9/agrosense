@@ -2,10 +2,11 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import JSON, Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database import Base
+from app.database import Base, utcnow
 
 
 class Diagnosis(Base):
@@ -25,7 +26,7 @@ class Diagnosis(Base):
         UUID(as_uuid=True), ForeignKey("diseases.id"), nullable=True
     )
     confidence_score: Mapped[float] = mapped_column(Float, nullable=False)
-    all_predictions: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    all_predictions: Mapped[dict | None] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=True)
     is_healthy: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     treatment_advice: Mapped[str | None] = mapped_column(String(5000), nullable=True)
     gps_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -36,5 +37,5 @@ class Diagnosis(Base):
     )
     processing_time_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow, nullable=False, index=True
+        DateTime(timezone=True), default=utcnow, nullable=False, index=True
     )

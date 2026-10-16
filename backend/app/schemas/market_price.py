@@ -32,3 +32,16 @@ class PriceTrendResponse(BaseModel):
     crop_name: str
     points: list[PriceTrendPoint]
     average_per_kg: Decimal | None = None
+
+class LatestPrice(BaseModel):
+    crop_id: UUID
+    crop_name: str
+    market_name: str
+    region: str | None = None
+    price_per_kg: Decimal
+    price_per_bag: Decimal | None = None
+    change_pct_7d: float | None = None
+    trend: str  # up | down | stable
+    recorded_at: datetime
+    source: str | None = None
+    history: list[Decimal] = []  # last ~14 daily prices, oldest first, for sparklines

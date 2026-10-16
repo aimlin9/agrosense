@@ -2,7 +2,8 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime, Float, String, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import JSON, Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -19,7 +20,7 @@ class WeatherCache(Base):
     )
     gps_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
     gps_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
-    forecast_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    forecast_data: Mapped[dict | None] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=True)
     planting_advisory: Mapped[str | None] = mapped_column(Text, nullable=True)
     fetched_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False

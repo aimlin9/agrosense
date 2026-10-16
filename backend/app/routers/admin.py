@@ -36,9 +36,10 @@ async def list_farmers(
     admin: Admin = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(Farmer).order_by(Farmer.created_at.desc()).limit(limit)
+    stmt = select(Farmer)
     if region:
         stmt = stmt.where(Farmer.region.ilike(f"%{region}%"))
+    stmt = stmt.order_by(Farmer.created_at.desc()).limit(limit)
     farmers = (await db.execute(stmt)).scalars().all()
     return farmers
 
@@ -52,7 +53,7 @@ async def list_diagnoses(
     stmt = (
         select(Diagnosis, Farmer.phone_number, Crop.name, Disease.display_name)
         .join(Farmer, Farmer.id == Diagnosis.farmer_id)
-        .join(Crop, Crop.id == Diagnosis.crop_id)
+        .outerjoin(Crop, Crop.id == Diagnosis.crop_id)
         .outerjoin(Disease, Disease.id == Diagnosis.predicted_disease_id)
         .order_by(Diagnosis.created_at.desc())
         .limit(limit)
@@ -136,7 +137,7 @@ async def get_farmer_detail(
 
     recent_stmt = (
         select(Diagnosis, Crop.name, Disease.display_name)
-        .join(Crop, Crop.id == Diagnosis.crop_id)
+        .outerjoin(Crop, Crop.id == Diagnosis.crop_id)
         .outerjoin(Disease, Disease.id == Diagnosis.predicted_disease_id)
         .where(Diagnosis.farmer_id == farmer_id)
         .order_by(Diagnosis.created_at.desc())

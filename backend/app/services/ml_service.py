@@ -8,11 +8,31 @@ Loading is ~70ms; inference is ~30ms. We don't want to repeat loading per reques
 """
 
 import json
+import logging
+import threading
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import numpy as np
-import tensorflow as tf
+
+logger = logging.getLogger("agrosense.ml")
+
+
+def _interpreter_class() -> Any:
+    """Prefer the lightweight LiteRT / tflite-runtime packages (≈10× less RAM
+    than full TensorFlow) and fall back to TensorFlow when they're absent."""
+    try:
+        from ai_edge_litert.interpreter import Interpreter  # type: ignore
+        return Interpreter
+    except ImportError:
+        pass
+    try:
+        from tflite_runtime.interpreter import Interpreter  # type: ignore
+        return Interpreter
+    except ImportError:
+        pass
+    import tensorflow as tf  # heavy; last resort
+    return tf.lite.Interpreter
 
 
 # ─── File paths ──────────────────────────────────────────────
@@ -31,7 +51,9 @@ class Prediction(TypedDict):
 
 # ─── Singleton state (module-level) ──────────────────────────
 # These get populated by load_model() at server startup.
-_interpreter: tf.lite.Interpreter | None = None
+_interpreter: Any = None
+# TFLite interpreters are not thread-safe; inference runs in worker threads.
+_lock = threading.Lock()
 _input_details: list | None = None
 _output_details: list | None = None
 _class_names: list[str] | None = None
@@ -66,7 +88,7 @@ def load_model() -> None:
         _class_names = json.load(f)
 
     # Build the interpreter
-    _interpreter = tf.lite.Interpreter(model_path=str(MODEL_PATH))
+    _interpreter = _interpreter_class()(model_path=str(MODEL_PATH))
     _interpreter.allocate_tensors()
 
     # Cache input/output tensor metadata. We need the index of each tensor
@@ -74,9 +96,14 @@ def load_model() -> None:
     _input_details = _interpreter.get_input_details()
     _output_details = _interpreter.get_output_details()
 
-    print(f"[ml_service] Model loaded: {len(_class_names)} classes")
-    print(f"[ml_service] Input shape:  {_input_details[0]['shape']}")
-    print(f"[ml_service] Output shape: {_output_details[0]['shape']}")
+    logger.info(
+        "Model loaded: %d classes, input %s, output %s",
+        len(_class_names), _input_details[0]["shape"], _output_details[0]["shape"],
+    )
+
+
+def is_loaded() -> bool:
+    return _interpreter is not None
 
 
 def predict(input_tensor: np.ndarray, top_k: int = 3) -> list[Prediction]:
@@ -110,11 +137,11 @@ def predict(input_tensor: np.ndarray, top_k: int = 3) -> list[Prediction]:
         )
 
     # 2. Set input tensor and invoke inference
-    _interpreter.set_tensor(_input_details[0]["index"], input_tensor)
-    _interpreter.invoke()
-
-    # 3. Read output. Shape is [1, 38] — one row of 38 class probabilities.
-    output = _interpreter.get_tensor(_output_details[0]["index"])
+    with _lock:
+        _interpreter.set_tensor(_input_details[0]["index"], input_tensor.astype(np.float32))
+        _interpreter.invoke()
+        # 3. Read output. Shape is [1, 38] — one row of 38 class probabilities.
+        output = _interpreter.get_tensor(_output_details[0]["index"]).copy()
     probabilities = output[0]  # drop the batch dimension → [38]
 
     # 4. Get top-k indices, descending order

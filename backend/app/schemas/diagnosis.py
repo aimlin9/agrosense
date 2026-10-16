@@ -22,7 +22,7 @@ class TreatmentAdvice(BaseModel):
 class DiagnosisResponse(BaseModel):
     id: UUID
     crop_name: str
-    image_url: str
+    image_url: str | None = None
     predicted_disease: str
     confidence: float
     is_healthy: bool
@@ -30,6 +30,11 @@ class DiagnosisResponse(BaseModel):
     treatment_advice: TreatmentAdvice | None = None
     processing_time_ms: int
     created_at: datetime
+    # True when the model isn't confident; the app shows a "retake" prompt.
+    low_confidence: bool = False
+    # False when the selected crop isn't one the model was trained on.
+    crop_supported: bool = True
+    advice_source: str = "ai"  # ai | curated
 
     class Config:
         from_attributes = True

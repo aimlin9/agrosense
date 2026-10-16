@@ -2,10 +2,10 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Float, Integer, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Uuid as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database import Base
+from app.database import Base, utcnow
 
 
 class Farmer(Base):
@@ -69,6 +69,6 @@ class Farmer(Base):
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.utcnow,
+        default=utcnow,
         nullable=False,
     )

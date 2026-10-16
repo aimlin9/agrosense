@@ -14,6 +14,7 @@ class DailyForecast(BaseModel):
     temp_max_c: float | None = None
     temp_min_c: float | None = None
     precipitation_mm: float | None = None
+    precipitation_probability_pct: float | None = None
     wind_max_kph: float | None = None
     weather_code: int | None = None
 
@@ -25,6 +26,7 @@ class WeatherResponse(BaseModel):
     current: CurrentConditions | None = None
     daily: list[DailyForecast]
     cached: bool = False
+    stale: bool = False
 
 
 class AdvisoryResponse(BaseModel):
@@ -33,3 +35,5 @@ class AdvisoryResponse(BaseModel):
     temperature_outlook: str
     recommendations: list[str]
     warnings: list[str] = []
+    crop_name: str | None = None
+    source: str = "ai"  # ai | rules

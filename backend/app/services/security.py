@@ -17,9 +17,28 @@ def hash_password(plain_password: str) -> str:
     return pwd_context.hash(plain_password)
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Check a plain-text password against a stored hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+# Verified against when the account doesn't exist, so response timing doesn't
+# reveal which phone numbers are registered.
+_DUMMY_HASH = pwd_context.hash("agrosense-timing-equaliser")
+
+
+def verify_password(plain_password: str, hashed_password: str | None) -> bool:
+    """Check a plain-text password against a stored hash.
+
+    Never raises: SMS-only accounts store a placeholder that isn't a bcrypt
+    hash, and those must simply fail to log in.
+    """
+    if not hashed_password:
+        pwd_context.verify(plain_password, _DUMMY_HASH)
+        return False
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except (ValueError, TypeError):
+        return False
+
+
+def has_usable_password(hashed_password: str | None) -> bool:
+    return bool(hashed_password) and pwd_context.identify(hashed_password) is not None
 
 
 def create_access_token(

@@ -40,5 +40,3 @@ twilio==9.0.5
 # Google Cloud authentication
 google-auth==2.30.0
 
-#FastAPI Rate Limiting
-fastapi-limiter==0.1.6
