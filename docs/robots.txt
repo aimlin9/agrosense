@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://aimlin9.github.io/agrosense/sitemap.xml

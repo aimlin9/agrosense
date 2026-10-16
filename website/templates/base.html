@@ -1,0 +1,122 @@
+{% from "_macros.html" import icon, logo %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if title %}{{ title }} · AgroSense{% else %}AgroSense — A crop doctor in every farmer’s pocket{% endif %}</title>
+<meta name="description" content="{{ description }}">
+<meta name="theme-color" content="#0F5427">
+<link rel="canonical" href="{{ site_url }}{{ path }}">
+<link rel="icon" type="image/png" href="{{ base }}assets/favicon.png">
+<link rel="apple-touch-icon" href="{{ base }}assets/apple-touch-icon.png">
+<meta property="og:type" content="{{ og_type or 'website' }}">
+<meta property="og:site_name" content="AgroSense">
+<meta property="og:title" content="{{ title or 'AgroSense' }}">
+<meta property="og:description" content="{{ description }}">
+<meta property="og:image" content="{{ site_url }}assets/og.png">
+<meta property="og:url" content="{{ site_url }}{{ path }}">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ base }}assets/css/site.css?v={{ version }}">
+<script>
+  // Hide animatable content only when motion is allowed; failsafe reveals it if scripts don't load.
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.documentElement.classList.add('js-motion');
+    setTimeout(function () { if (!window.__motion) document.documentElement.classList.remove('js-motion'); }, 2500);
+  }
+</script>
+{% if schema %}<script type="application/ld+json">{{ schema|safe }}</script>{% endif %}
+</head>
+<body class="{{ body_class or '' }}">
+<a class="skip" href="#main">Skip to content</a>
+{% if progress %}<div class="progress-bar" aria-hidden="true"></div>{% endif %}
+
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="brand" href="{{ base }}" aria-label="AgroSense home">{{ logo() }}AgroSense</a>
+    <ul class="nav-menu">
+      <li class="has-menu">
+        <button type="button" aria-expanded="false" aria-haspopup="true">Product {{ icon('chevron-down', 'chev') }}</button>
+        <div class="mega" role="menu">
+          {% for f in features %}
+          <a href="{{ base }}product/{{ f.slug }}/" role="menuitem"><span class="ico">{{ icon(f.icon) }}</span><span><strong>{{ f.name }}</strong><span>{{ f.tagline }}</span></span></a>
+          {% endfor %}
+          <a href="{{ base }}product/" role="menuitem"><span class="ico">{{ icon('layers') }}</span><span><strong>Product overview</strong><span>Everything in one place</span></span></a>
+        </div>
+      </li>
+      <li><a href="{{ base }}how-it-works/" {% if section == 'how' %}aria-current="page"{% endif %}>How it works</a></li>
+      <li><a href="{{ base }}crop-guide/" {% if section == 'guide' %}aria-current="page"{% endif %}>Crop guide</a></li>
+      <li class="has-menu">
+        <button type="button" aria-expanded="false" aria-haspopup="true">Company {{ icon('chevron-down', 'chev') }}</button>
+        <div class="mega" role="menu">
+          <a href="{{ base }}about/" role="menuitem"><span class="ico">{{ icon('leaf') }}</span><span><strong>About</strong><span>Our story and what we believe</span></span></a>
+          <a href="{{ base }}impact/" role="menuitem"><span class="ico">{{ icon('heart') }}</span><span><strong>Impact</strong><span>The problem we’re solving</span></span></a>
+          <a href="{{ base }}technology/" role="menuitem"><span class="ico">{{ icon('cpu') }}</span><span><strong>Technology</strong><span>The model and the platform</span></span></a>
+          <a href="{{ base }}partners/" role="menuitem"><span class="ico">{{ icon('users') }}</span><span><strong>Partners</strong><span>Cooperatives, NGOs, extension</span></span></a>
+          <a href="{{ base }}journal/" role="menuitem"><span class="ico">{{ icon('book') }}</span><span><strong>Journal</strong><span>Field notes and guides</span></span></a>
+          <a href="{{ base }}press/" role="menuitem"><span class="ico">{{ icon('award') }}</span><span><strong>Press</strong><span>Brand assets and facts</span></span></a>
+        </div>
+      </li>
+      <li><a href="{{ base }}pricing/" {% if section == 'pricing' %}aria-current="page"{% endif %}>Pricing</a></li>
+      <li><a href="{{ base }}help/" {% if section == 'help' %}aria-current="page"{% endif %}>Help</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a class="text-link" href="{{ base }}contact/">Contact</a>
+      <a class="btn btn-primary btn-sm" href="{{ base }}download/" data-magnetic>Get the app</a>
+    </div>
+    <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="drawer"><div><span></span><span></span><span></span></div></button>
+  </div>
+</header>
+<nav class="drawer" id="drawer" aria-label="Mobile">
+  <h5>Product</h5>
+  {% for f in features %}<a href="{{ base }}product/{{ f.slug }}/">{{ f.name }} {{ icon('arrow-right') }}</a>{% endfor %}
+  <a href="{{ base }}how-it-works/">How it works {{ icon('arrow-right') }}</a>
+  <a href="{{ base }}crop-guide/">Crop guide {{ icon('arrow-right') }}</a>
+  <h5>Company</h5>
+  <a href="{{ base }}about/">About {{ icon('arrow-right') }}</a>
+  <a href="{{ base }}impact/">Impact {{ icon('arrow-right') }}</a>
+  <a href="{{ base }}technology/">Technology {{ icon('arrow-right') }}</a>
+  <a href="{{ base }}partners/">Partners {{ icon('arrow-right') }}</a>
+  <a href="{{ base }}pricing/">Pricing {{ icon('arrow-right') }}</a>
+  <a href="{{ base }}journal/">Journal {{ icon('arrow-right') }}</a>
+  <a href="{{ base }}help/">Help centre {{ icon('arrow-right') }}</a>
+  <a href="{{ base }}contact/">Contact {{ icon('arrow-right') }}</a>
+  <a class="btn btn-primary" href="{{ base }}download/">Get the app</a>
+</nav>
+
+<main id="main">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="brand" href="{{ base }}">{{ logo(32, True) }}<span style="color:#fff">AgroSense</span></a>
+        <p>AI crop advice for smallholder farmers — in the app, and by SMS on any phone. Made in Ghana.</p>
+        <form class="newsletter" data-mailto="oramsey609@gmail.com" data-subject="Subscribe me to AgroSense updates" novalidate>
+          <label class="sr-only" for="nl-email">Email</label>
+          <div class="field" style="flex:1;margin:0"><input id="nl-email" name="email" type="email" placeholder="Email for field updates" required></div>
+          <button class="btn btn-primary" type="submit">Subscribe</button>
+        </form>
+      </div>
+      <div><h5>Product</h5><ul>{% for f in features %}<li><a href="{{ base }}product/{{ f.slug }}/">{{ f.name }}</a></li>{% endfor %}<li><a href="{{ base }}download/">Download</a></li></ul></div>
+      <div><h5>Learn</h5><ul><li><a href="{{ base }}how-it-works/">How it works</a></li><li><a href="{{ base }}crop-guide/">Crop guide</a></li><li><a href="{{ base }}journal/">Journal</a></li><li><a href="{{ base }}help/">Help centre</a></li><li><a href="{{ base }}technology/">Technology</a></li></ul></div>
+      <div><h5>Company</h5><ul><li><a href="{{ base }}about/">About</a></li><li><a href="{{ base }}impact/">Impact</a></li><li><a href="{{ base }}partners/">Partners</a></li><li><a href="{{ base }}pricing/">Pricing</a></li><li><a href="{{ base }}press/">Press</a></li><li><a href="{{ base }}contact/">Contact</a></li></ul></div>
+      <div><h5>Legal</h5><ul><li><a href="{{ base }}legal/privacy.html">Privacy policy</a></li><li><a href="{{ base }}legal/terms.html">Terms of service</a></li><li><a href="https://github.com/aimlin9/agrosense">Source on GitHub</a></li></ul></div>
+    </div>
+    <div class="foot-word" aria-hidden="true">AgroSense</div>
+    <div class="foot-bottom">
+      <span>© <span id="year">2026</span> AgroSense · Accra, Ghana</span>
+      <span>Forecasts by Open-Meteo · Model trained on PlantVillage (Hughes &amp; Salathé, 2015)</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+<script src="{{ base }}assets/js/site.js?v={{ version }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, phone, backdrop, cta %}
+{% block content %}
+<section class="hero" style="padding-bottom:clamp(48px,6vw,96px)">
+  {{ backdrop() }}
+  <div class="wrap">
+    <div>
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="{{ base }}product/">Product</a><span>/</span><span>{{ f.name }}</span></nav>
+      <span class="eyebrow">{{ f.tagline }}</span>
+      <h1 data-split style="font-size:clamp(42px,6vw,76px)">{{ f.title }}</h1>
+      <p class="lead" data-reveal>{{ f.lead }}</p>
+      <div class="btn-row" data-reveal><a class="btn btn-primary" href="{{ base }}download/" data-magnetic>Get the app {{ icon('arrow-right', 'arrow') }}</a><a class="btn btn-secondary" href="{{ base }}help/">Questions? Help centre</a></div>
+    </div>
+    {% if f.shot %}
+    <div class="stage">
+      {% if f.shot2 %}{{ phone(f.shot2, f.name + ' screen', 'p2', False) }}{% endif %}
+      {{ phone(f.shot, f.name + ' screen', 'p1', False) }}
+    </div>
+    {% else %}
+    <div data-reveal="scale">
+      <div class="card dark" style="padding:36px;border-radius:var(--r-2xl)">
+        <span class="eyebrow" style="color:rgba(255,255,255,.6)">Example conversation</span>
+        <div class="sms">
+          <div class="bubble me">help</div>
+          <div class="bubble">AgroSense help: • Send a photo of a sick plant for diagnosis • Text 'price tomato' for market prices • Text 'weather' for forecast</div>
+          <div class="bubble me">price maize</div>
+          <div class="bubble">AgroSense: Maize prices (GHS/kg): Makola 4.86 · Kaneshie 4.72 · Kumasi 4.36</div>
+          <div class="bubble me">[photo] tomato</div>
+          <div class="bubble">AgroSense diagnosis: Tomato - Late blight (100% confident). Pull out and destroy badly infected plants today.</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section band-surface">
+  <div class="wrap">
+    <div class="grid g2">
+      {% for t, d in f.points %}
+      <div class="card" data-reveal data-tilt>
+        <div class="ico-tile{{ [' ', ' sky', ' sun', ' clay'][loop.index0] }}">{{ icon(['check-circle','target','zap','shield'][loop.index0]) }}</div>
+        <h3>{{ t }}</h3>
+        <p>{{ d }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section tight">
+  <div class="wrap">
+    <div class="section-head" data-reveal><span class="eyebrow">More of AgroSense</span><h2 style="margin-top:18px;font-size:clamp(30px,3.6vw,44px)">Works even better together.</h2></div>
+    <div class="grid g4">
+      {% for o in features if o.slug != f.slug %}
+      <a class="card" href="{{ base }}product/{{ o.slug }}/" data-reveal>
+        <div class="ico-tile">{{ icon(o.icon) }}</div>
+        <h4>{{ o.name }}</h4>
+        <p>{{ o.tagline }}</p>
+        <span class="link-arrow more">Learn more {{ icon('arrow-right') }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{{ cta() }}
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, backdrop, cta %}
+{% set sev = {'high':'Severe','moderate':'Moderate','low':'Mild'}[e.severity] %}
+{% block content %}
+<section class="page-hero" style="padding-bottom:clamp(40px,5vw,72px)">
+  {{ backdrop() }}
+  <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="{{ base }}crop-guide/">Crop guide</a><span>/</span><a href="{{ base }}crop-guide/#{{ e.crop }}">{{ e.crop }}</a><span>/</span><span>{{ e.name }}</span></nav>
+    <div class="chips" data-reveal><span class="tag {{ e.severity }}">{{ icon('activity') }} {{ sev }}</span><span class="tag">{{ e.type }}</span><span class="tag">{{ e.crop }}</span></div>
+    <h1 data-split style="margin-top:18px">{{ e.name }} <em class="accent">in {{ e.crop|lower }}</em></h1>
+    <p data-reveal style="margin-top:14px;font:italic 400 22px/1.4 var(--serif);color:var(--ink-muted)">{{ e.pathogen }}</p>
+    <p class="lead" data-reveal>{{ e.summary }}</p>
+  </div>
+</section>
+
+<section class="section flush-top">
+  <div class="wrap article">
+    <nav class="toc" aria-label="On this page">
+      <a href="#symptoms">Symptoms</a><a href="#conditions">When it strikes</a><a href="#spread">How it spreads</a><a href="#treatment">Treatment</a><a href="#prevention">Prevention</a>
+    </nav>
+    <article class="prose">
+      <div class="fact-grid" data-reveal>
+        <div class="fact"><b>Caused by</b><span>{{ e.pathogen }} ({{ e.type|lower }})</span></div>
+        <div class="fact"><b>Severity</b><span>{{ sev }}{% if e.severity == 'high' %} — act the same day{% endif %}</span></div>
+      </div>
+
+      <h2 id="symptoms">What you’ll see</h2>
+      <ul>{% for s in e.symptoms %}<li>{{ s }}</li>{% endfor %}</ul>
+
+      <h2 id="conditions">When it strikes</h2>
+      <p>{{ e.conditions }}</p>
+
+      <h2 id="spread">How it spreads</h2>
+      <p>{{ e.spread }}</p>
+
+      <h2 id="treatment">What to do</h2>
+      <h3>In the field</h3>
+      <ol>{% for c in e.cultural %}<li>{{ c }}</li>{% endfor %}</ol>
+      <h3>Organic — try first</h3>
+      <p>{{ e.organic }}</p>
+      <h3>Chemical — if it keeps spreading</h3>
+      <p>{{ e.chemical }}</p>
+      <div class="callout">{{ icon('alert') }}<div>Buy only from a certified agro-input dealer, follow the label exactly, wear gloves and a mask, and respect the waiting period before harvest. Ask your extension officer which product suits your farm.</div></div>
+
+      <h2 id="prevention">Prevent it next season</h2>
+      <ul>{% for p in e.prevention %}<li>{{ p }}</li>{% endfor %}</ul>
+
+      <div class="callout ok">{{ icon('camera') }}<div><strong>Not sure it’s {{ e.name|lower }}?</strong> Photograph the leaf with AgroSense — you’ll get the likely disease and how sure the model is. <a href="{{ base }}download/">Get the app</a>.</div></div>
+      <p class="small muted">General guidance for smallholder farmers. Conditions vary — your local extension officer knows your farm best.</p>
+    </article>
+  </div>
+</section>
+
+{% if related %}
+<section class="section band-surface">
+  <div class="wrap">
+    <div class="section-head" data-reveal><span class="eyebrow">Also affects {{ e.crop|lower }}</span><h2 style="margin-top:18px;font-size:clamp(28px,3.4vw,40px)">Related conditions</h2></div>
+    <div class="grid g3">
+      {% for r in related %}
+      <a class="card guide-card" href="{{ base }}crop-guide/{{ r.slug }}/" data-reveal>
+        <div class="meta"><span class="crop">{{ r.crop }} · {{ r.type }}</span><span class="tag {{ r.severity }}">{{ {'high':'Severe','moderate':'Moderate','low':'Mild'}[r.severity] }}</span></div>
+        <h3>{{ r.name }}</h3><p>{{ r.summary }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{{ cta('Catch it early with AgroSense.', 'Photograph a sick leaf and get a diagnosis and treatment plan in seconds.') }}
+{% endblock %}

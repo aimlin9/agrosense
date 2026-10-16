@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, backdrop, cta, section_head %}
+{% block content %}
+<section class="page-hero">
+  {{ backdrop() }}
+  <div class="wrap">
+    <span class="eyebrow">Impact</span>
+    <h1 data-split>Early advice is the cheapest <em class="accent">harvest insurance.</em></h1>
+    <p class="lead" data-reveal>Most crop disease can be contained if it’s caught early. The problem in Ghana isn’t knowledge — it’s distance. AgroSense closes the distance.</p>
+  </div>
+</section>
+
+<section class="photo-band" style="min-height:520px">
+  <div class="bg" style="background-image:url('{{ base }}assets/field-maize.webp')"></div>
+  <div class="wrap">
+    <div class="stats" style="background:rgba(10,30,18,.35);border-color:rgba(255,255,255,.18)" data-reveal>
+      <div style="border-color:rgba(255,255,255,.18)"><span class="stat-num">20–40%</span><span class="stat-label" style="color:rgba(255,255,255,.72)">of harvests lost each year to pests and disease</span></div>
+      <div style="border-color:rgba(255,255,255,.18)"><span class="stat-num">1 : 1,500</span><span class="stat-label" style="color:rgba(255,255,255,.72)">extension officers to farmers</span></div>
+      <div style="border-color:rgba(255,255,255,.18)"><span class="stat-num" data-count="2.2" data-suffix="M">2.2M</span><span class="stat-label" style="color:rgba(255,255,255,.72)">smallholder farms in Ghana</span></div>
+      <div style="border-color:rgba(255,255,255,.18)"><span class="stat-num" data-count="33" data-suffix="M">33M</span><span class="stat-label" style="color:rgba(255,255,255,.72)">smallholders across West Africa</span></div>
+    </div>
+    <p class="small" style="margin-top:16px;color:rgba(255,255,255,.55)">Figures as cited in the AgroSense project brief; estimates vary by crop, region and season.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    {{ section_head('Theory of change', 'How a photo becomes a better harvest.') }}
+    <div class="pipeline" data-reveal>
+      <div><b>INPUT</b><strong>A farmer notices a problem</strong><span>And takes a photo the same day.</span></div>
+      <div><b>INSIGHT</b><strong>A diagnosis in seconds</strong><span>With severity and confidence, not just a name.</span></div>
+      <div><b>ACTION</b><strong>The right response, early</strong><span>Remove, protect, or spray at the right time, with the right product.</span></div>
+      <div><b>OUTCOME</b><strong>Less loss, less waste</strong><span>Fewer failed fields and fewer wasted chemicals.</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-surface">
+  <div class="wrap split">
+    <div data-reveal>
+      <span class="eyebrow">Who we serve</span>
+      <h2 style="margin-top:18px">Built around the farmers who need it most.</h2>
+      <ul class="checks">
+        <li>{{ icon('check') }}<span><strong>Smallholders on one to five acres</strong>, growing tomato, maize, pepper and other staples.</span></li>
+        <li>{{ icon('check') }}<span><strong>Farmers with feature phones</strong>, reached by SMS rather than left out.</span></li>
+        <li>{{ icon('check') }}<span><strong>Women farmers</strong>, who are often furthest from extension visits.</span></li>
+        <li>{{ icon('check') }}<span><strong>Extension officers</strong>, whose time stretches further when they can review results remotely.</span></li>
+      </ul>
+    </div>
+    <div class="split-media" data-reveal><div class="frame photo" style="aspect-ratio:4/5"><img src="{{ base }}assets/field-leaf.webp" alt="Morning dew on a crop leaf" loading="lazy"></div></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    {{ section_head('How we’ll measure it', 'Honest goals for the pilot.', 'We’re in beta. These are the outcomes we’ll measure with our first partners — not claims about results we haven’t seen yet.') }}
+    <div class="grid g3">
+      <div class="card" data-reveal><div class="ico-tile">{{ icon('target') }}</div><h3>Accuracy in the field</h3><p>How often the diagnosis matches an extension officer’s, measured on real farm photos from Ghana.</p></div>
+      <div class="card" data-reveal><div class="ico-tile sky">{{ icon('clock') }}</div><h3>Time to action</h3><p>Days between a farmer noticing a problem and treating it, compared with before.</p></div>
+      <div class="card" data-reveal><div class="ico-tile sun">{{ icon('bar-chart') }}</div><h3>Loss and spend</h3><p>Self-reported crop loss and money spent on chemicals that didn’t match the problem.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-dark">
+  {{ backdrop(True) }}
+  <div class="wrap center" style="position:relative">
+    <span class="eyebrow plain" data-reveal>Our commitments</span>
+    <h2 style="margin:18px auto 0;max-width:16em" data-split>Free for farmers. Honest about limits. Local by design.</h2>
+    <div class="grid g3" style="margin-top:56px;text-align:left">
+      <div class="glass" data-reveal><strong>Free for farmers, always</strong><span>Organisations fund deployment; farmers never pay to diagnose their crops.</span></div>
+      <div class="glass" data-reveal><strong>No false confidence</strong><span>We show uncertainty, and we point to people when software isn’t enough.</span></div>
+      <div class="glass" data-reveal><strong>Built for Ghana first</strong><span>Local markets, local products, local languages next.</span></div>
+    </div>
+  </div>
+</section>
+{{ cta('Help us prove it in the field.', 'We’re looking for cooperatives and programmes to run the first measured pilots with us.') }}
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, backdrop, cta %}
+{% block content %}
+<section class="page-hero" style="padding-bottom:0">
+  {{ backdrop() }}
+  <div class="wrap narrow" style="max-width:860px">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="{{ base }}journal/">Journal</a><span>/</span><span>{{ post.tag }}</span></nav>
+    <span class="tag now">{{ post.tag }}</span>
+    <h1 data-split style="font-size:clamp(38px,5.4vw,64px);margin-top:18px">{{ post.title }}</h1>
+    <p class="muted" style="margin-top:22px" data-reveal>AgroSense team · {{ post.read }}</p>
+    <div class="post-hero-img" data-reveal="scale"><img src="{{ base }}{{ post.image }}" alt=""></div>
+  </div>
+</section>
+<section class="section tight">
+  <div class="wrap" style="max-width:860px">
+    <article class="prose" style="max-width:none">
+      {% block article %}{% endblock %}
+    </article>
+    <div style="margin-top:56px;padding-top:28px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <a class="link-arrow" href="{{ base }}journal/">{{ icon('arrow-right') }} All articles</a>
+      <a class="link-arrow" href="{{ base }}crop-guide/">Browse the crop guide {{ icon('arrow-right') }}</a>
+    </div>
+  </div>
+</section>
+{{ cta() }}
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, backdrop %}
+{% block content %}
+<section class="page-hero">
+  {{ backdrop() }}
+  <div class="wrap">
+    <span class="eyebrow">Contact</span>
+    <h1 data-split>Let’s talk.</h1>
+    <p class="lead" data-reveal>Questions about the beta, a partnership, press, or a problem with the app — we read every message.</p>
+  </div>
+</section>
+
+<section class="section flush-top">
+  <div class="wrap contact-grid">
+    <div class="card" data-reveal style="padding:clamp(24px,4vw,44px)">
+      <form class="form" data-mailto="oramsey609@gmail.com" data-subject="AgroSense" novalidate>
+        <div class="row2">
+          <div class="field"><label for="c-name">Name</label><input id="c-name" name="name" required autocomplete="name"><span class="err">Please add your name.</span></div>
+          <div class="field"><label for="c-email">Email</label><input id="c-email" name="email" type="email" required autocomplete="email"><span class="err">Please enter a valid email.</span></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="c-phone">Phone (optional)</label><input id="c-phone" name="phone" type="tel" autocomplete="tel" placeholder="024 412 3456"></div>
+          <div class="field"><label for="c-topic">Topic</label><select id="c-topic" name="topic" required><option value="">Choose…</option><option>Beta access</option><option>Partnership</option><option>Support</option><option>Press</option><option>Something else</option></select><span class="err">Please choose a topic.</span></div>
+        </div>
+        <div class="field"><label for="c-msg">Message</label><textarea id="c-msg" name="message" required></textarea><span class="err">Please write a message.</span></div>
+        <button class="btn btn-primary" type="submit">Send message {{ icon('arrow-right', 'arrow') }}</button>
+        <p class="form-note">This opens your email app with your message ready to send.</p>
+      </form>
+      <div class="form-success" role="status">Your email app should have opened with your message. If it didn’t, write to <strong>oramsey609@gmail.com</strong>.</div>
+    </div>
+    <div style="display:grid;gap:16px">
+      <a class="card" href="mailto:oramsey609@gmail.com" data-reveal><div class="ico-tile">{{ icon('mail') }}</div><h4>Email</h4><p>oramsey609@gmail.com</p></a>
+      <a class="card" href="{{ base }}partners/" data-reveal><div class="ico-tile sun">{{ icon('users') }}</div><h4>Partnerships</h4><p>Pilots for cooperatives, NGOs and extension services.</p></a>
+      <a class="card" href="{{ base }}help/" data-reveal><div class="ico-tile sky">{{ icon('help') }}</div><h4>Help centre</h4><p>Most questions are answered here.</p></a>
+      <div class="card" data-reveal><div class="ico-tile clay">{{ icon('map') }}</div><h4>Based in</h4><p>Accra, Ghana</p></div>
+    </div>
+  </div>
+</section>
+{% endblock %}

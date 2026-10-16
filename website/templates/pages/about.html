@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, backdrop, cta, section_head %}
+{% block content %}
+<section class="page-hero">
+  {{ backdrop() }}
+  <div class="wrap">
+    <span class="eyebrow">About AgroSense</span>
+    <h1 data-split>Expert crop advice shouldn’t depend on <em class="accent">where you farm.</em></h1>
+    <p class="lead" data-reveal>AgroSense started with a simple question: what if every farmer in Ghana could ask an expert about a sick plant — and get an answer the same day?</p>
+  </div>
+</section>
+
+<section class="section flush-top">
+  <div class="wrap split">
+    <div class="split-media" data-reveal><div class="frame photo" style="aspect-ratio:4/5"><img src="{{ base }}assets/field-market.webp" alt="A hand holding freshly harvested tomatoes" loading="lazy"></div></div>
+    <div class="prose" data-reveal>
+      <span class="eyebrow">Our story</span>
+      <h2 style="margin-top:18px">Built in Accra, for the farms beyond it.</h2>
+      <p>Ghana has millions of smallholder farms and roughly one extension officer for every 1,500 farmers. When a disease appears, the gap between noticing it and knowing what to do can cost a season.</p>
+      <p>AgroSense was built to close that gap. It began as a model trained to recognise plant disease from a photo, and grew into a platform: treatment plans written for Ghanaian conditions, weather advice for your crop, market prices across five markets, and SMS for farmers without smartphones.</p>
+      <p>We’re in beta, working towards field pilots with farmers and the people who support them.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section band-surface">
+  <div class="wrap">
+    {{ section_head('What we believe', 'Four principles behind every decision.') }}
+    <div class="grid g4">
+      <div class="card" data-reveal><div class="ico-tile">{{ icon('heart') }}</div><h4>Farmers first</h4><p>Free for farmers, designed for their phones, their networks and their fields.</p></div>
+      <div class="card" data-reveal><div class="ico-tile sky">{{ icon('eye') }}</div><h4>Honest by design</h4><p>Show uncertainty. Point to people when software isn’t enough.</p></div>
+      <div class="card" data-reveal><div class="ico-tile sun">{{ icon('leaf') }}</div><h4>Organic first</h4><p>Cultural and organic methods before chemicals, and safety whenever chemicals come up.</p></div>
+      <div class="card" data-reveal><div class="ico-tile clay">{{ icon('globe') }}</div><h4>Local by default</h4><p>Ghanaian markets, products sold here, and local languages next.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap two-col">
+    <div data-reveal>
+      <span class="eyebrow">How it was built</span>
+      <h2 style="margin-top:18px">From a model to a platform.</h2>
+      <p class="lead" style="margin-top:18px">Every stage, in the open.</p>
+      <a class="link-arrow" href="https://github.com/aimlin9/agrosense" style="margin-top:22px">{{ icon('github') }} View the source</a>
+    </div>
+    <div class="timeline">
+      <div class="tl-fill"></div>
+      <div class="tl-item" data-reveal><span class="when">Stage 1</span><h3>The model</h3><p>Two-phase transfer learning on MobileNetV2 across 54,305 PlantVillage images: 97.28% validation accuracy in a 2.7 MB file.</p></div>
+      <div class="tl-item" data-reveal><span class="when">Stage 2</span><h3>The backend</h3><p>A FastAPI platform with PostgreSQL, Redis, secure accounts, and ten data models for farmers, crops, diagnoses, prices and more.</p></div>
+      <div class="tl-item" data-reveal><span class="when">Stage 3</span><h3>The diagnosis pipeline</h3><p>Photo storage, preprocessing, inference and treatment advice tuned for Ghana — end to end in seconds.</p></div>
+      <div class="tl-item" data-reveal><span class="when">Stage 4</span><h3>Prices, weather and SMS</h3><p>Five-market prices, a weather advisory, farm plots, an admin review loop and an SMS gateway for feature phones.</p></div>
+      <div class="tl-item" data-reveal><span class="when">Stage 5</span><h3>The mobile app</h3><p>A React Native app for Android and iOS: scanning, results, history, weather, prices, Google sign-in.</p></div>
+      <div class="tl-item" data-reveal><span class="when">Now</span><h3>Hardened for the field</h3><p>Graceful fallbacks for every service, a redesigned app, the crop guide, farm records, and preparation for field pilots.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-surface">
+  <div class="wrap split">
+    <div data-reveal>
+      <span class="eyebrow">Founder</span>
+      <h2 style="margin-top:18px">Ramsey Opoku Gyimah</h2>
+      <p class="lead" style="margin-top:18px">Computer Science student in Accra, and the builder of AgroSense — from training the model to shipping the app.</p>
+      <div class="btn-row" style="margin-top:28px"><a class="btn btn-secondary" href="https://github.com/aimlin9">{{ icon('github') }} GitHub</a><a class="btn btn-secondary" href="{{ base }}contact/">{{ icon('mail') }} Get in touch</a></div>
+    </div>
+    <div class="card" data-reveal style="padding:40px">
+      <blockquote style="margin:0;font:italic 400 clamp(22px,2.4vw,30px)/1.45 var(--serif);color:var(--ink)">“The farmer who spots a problem on Monday should know what to do by Monday evening — whether they have a smartphone or not.”</blockquote>
+      <p class="muted" style="margin-top:20px">— The idea behind AgroSense</p>
+    </div>
+  </div>
+</section>
+{{ cta('Want to build this with us?', 'We’re looking for partners, advisers and early supporters who care about farmers in Ghana.') }}
+{% endblock %}

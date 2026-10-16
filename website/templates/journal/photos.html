@@ -1,0 +1,25 @@
+{% extends "journal/_post.html" %}
+{% from "_macros.html" import icon %}
+{% block article %}
+<p><strong>When AgroSense says it isn’t sure, the photo is usually the reason.</strong> The model was trained on clear, close images of single leaves. The closer your photo is to that, the more reliable the answer.</p>
+
+<h2>1. One leaf, filling the frame</h2>
+<p>Choose a single affected leaf and get close enough that it fills most of the screen. A photo of the whole plant from a few steps away gives the model too few pixels of the actual problem.</p>
+
+<h2>2. Daylight, not flash</h2>
+<p>Natural light shows true colour, which matters: the difference between yellowing and browning is part of the diagnosis. Avoid the flash. If the midday sun is harsh, shade the leaf with your body or hand.</p>
+
+<h2>3. Show the damage, not the healthiest leaf</h2>
+<p>It’s tempting to photograph the best-looking leaf. Pick the one with clear spots, patches, curling or mould — that’s what the model needs to see.</p>
+
+<h2>4. Hold still and focus</h2>
+<p>Tap the leaf on your screen to focus before taking the photo, and brace your elbows. Blurry edges lower confidence.</p>
+
+<h2>5. A plain background helps</h2>
+<p>Hold the leaf against your palm, a sheet of paper, or the soil, so it doesn’t blend with other leaves behind it.</p>
+
+<div class="callout ok">{{ icon('check-circle') }}<div><strong>Still not sure?</strong> Take a second photo of a different affected leaf. If both agree with high confidence, you can act with more certainty. If they don’t, show both to an extension officer.</div></div>
+
+<h2>What AgroSense does with your photo</h2>
+<p>Before uploading, the app straightens your photo, shrinks it to a light JPEG and removes its location data. That keeps uploads fast on 3G and keeps where you farm private. On the server, the model compares the leaf against the diseases that affect the crop you chose, and tells you how confident it is.</p>
+{% endblock %}

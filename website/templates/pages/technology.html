@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, backdrop, cta, section_head %}
+{% block content %}
+<section class="page-hero dark">
+  {{ backdrop(True) }}
+  <div class="wrap">
+    <span class="eyebrow">Technology</span>
+    <h1 data-split>Small model. <em class="accent" style="color:var(--brand-glow)">Serious</em> engineering.</h1>
+    <p class="lead" data-reveal>A 2.7 MB TensorFlow Lite model at the centre of a platform built to keep working when networks, clouds and APIs don’t.</p>
+    <div class="stats" style="margin-top:56px" data-reveal>
+      <div><span class="stat-num" data-count="97.28" data-suffix="%">97.28%</span><span class="stat-label">validation accuracy</span></div>
+      <div><span class="stat-num" data-count="2.7" data-suffix=" MB">2.7 MB</span><span class="stat-label">model size after quantisation</span></div>
+      <div><span class="stat-num" data-count="54305">54,305</span><span class="stat-label">training images, 38 classes</span></div>
+      <div><span class="stat-num" data-count="36">36</span><span class="stat-label">automated backend tests on every push</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    {{ section_head('The model', 'Two phases of transfer learning.', 'We started from MobileNetV2 — a network designed for phones — and taught it to read plant disease in two careful steps.') }}
+    <div class="grid g2" style="margin-bottom:40px">
+      <div class="card" data-reveal><span class="tag now">Phase 1 · 94.6%</span><h3 style="margin-top:18px">Train the head</h3><p>With the pretrained base frozen, we trained only the new classification layer for 10 epochs at a learning rate of 1e-3.</p></div>
+      <div class="card" data-reveal><span class="tag next">Phase 2 · 97.28%</span><h3 style="margin-top:18px">Fine-tune the top</h3><p>We unfroze the top 30 layers and trained for 10 more epochs at a learning rate 100× smaller, so the model adapted without forgetting what it knew.</p></div>
+    </div>
+    <figure class="card" style="padding:24px" data-reveal>
+      <img src="{{ base }}assets/training-curves.webp" width="1400" height="491" alt="Training and validation accuracy and loss across 20 epochs, reaching 97.28% validation accuracy" loading="lazy">
+      <figcaption class="small muted" style="margin-top:14px">The dashed line marks the switch to fine-tuning. The brief loss spike just after it is expected: frozen weights start learning again, then settle.</figcaption>
+    </figure>
+    <div class="callout info" style="margin-top:28px" data-reveal>{{ icon('info') }}<div><strong>A note on the number.</strong> 97.28% is measured on PlantVillage validation images, which are cleaner than photos from a field. That’s why every result shows its confidence and AgroSense asks for a second opinion when it isn’t sure. Field data from farmers in Ghana is the next step.</div></div>
+  </div>
+</section>
+
+<section class="section band-surface">
+  <div class="wrap">
+    {{ section_head('The pipeline', 'What happens to a photo.') }}
+    <div class="pipeline" data-reveal>
+      <div><b>01 · PREPARE</b><strong>On the phone</strong><span>Resize to ≤1280px JPEG; handles iPhone HEIC; no location data.</span></div>
+      <div><b>02 · VALIDATE</b><strong>On the server</strong><span>Type and size checks, decompression-bomb guard, re-encoded upright.</span></div>
+      <div><b>03 · IDENTIFY</b><strong>Crop-aware model</strong><span>Scores 38 classes, restricted and renormalised to your crop.</span></div>
+      <div><b>04 · ADVISE</b><strong>Localised guidance</strong><span>Gemini advice for Ghana, cached; curated fallback if unavailable.</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    {{ section_head('Reliability', 'Designed to degrade gracefully.', 'Rural networks drop, free-tier servers sleep and APIs have bad days. AgroSense keeps answering.') }}
+    <div class="table-wrap" data-reveal>
+      <table>
+        <thead><tr><th>If this is unavailable…</th><th>…AgroSense still</th></tr></thead>
+        <tbody>
+          <tr><td><strong>AI advice service</strong></td><td>Answers with curated, conservative treatment advice and a rules-based weather advisory.</td></tr>
+          <tr><td><strong>Photo storage</strong></td><td>Diagnoses the photo; it just isn’t kept.</td></tr>
+          <tr><td><strong>Cache / rate-limit store</strong></td><td>Serves every request; limits fall back to memory behind a 30-second circuit breaker.</td></tr>
+          <tr><td><strong>Weather provider</strong></td><td>Shows the last good forecast for up to seven days, clearly labelled.</td></tr>
+          <tr><td><strong>Your connection</strong></td><td>Opens instantly from cache; retries automatically when the network returns.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section band-surface">
+  <div class="wrap">
+    {{ section_head('Security &amp; privacy', 'Built with care for people who trust us.') }}
+    <div class="grid g3">
+      <div class="card" data-reveal><div class="ico-tile">{{ icon('lock') }}</div><h4>Accounts</h4><p>Passwords hashed with bcrypt. One active session per account; signing out revokes the token on the server.</p></div>
+      <div class="card" data-reveal><div class="ico-tile sky">{{ icon('shield') }}</div><h4>Abuse protection</h4><p>Rate limits on sign-in and diagnosis; verified SMS webhooks; Google accounts linked only by verified email.</p></div>
+      <div class="card" data-reveal><div class="ico-tile sun">{{ icon('eye') }}</div><h4>Privacy by default</h4><p>Location stripped from photos. Delete any scan, or your whole account, from the app.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    {{ section_head('Stack', 'Open, proven tools.') }}
+    <div class="chips" data-reveal>
+      {% for t in ['TensorFlow Lite','MobileNetV2','FastAPI','PostgreSQL','Redis','SQLAlchemy','Pydantic','Gemini 2.5 Flash','Open-Meteo','Cloudflare R2','Twilio','React Native','Expo','Reanimated','React Query','GitHub Actions'] %}<span class="chip">{{ t }}</span>{% endfor %}
+    </div>
+    <p class="muted small" style="margin-top:24px" data-reveal>The code is public on <a href="https://github.com/aimlin9/agrosense" style="color:var(--brand)">GitHub</a>.</p>
+  </div>
+</section>
+{{ cta() }}
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, backdrop %}
+{% set groups = [
+  ('getting-started', 'Getting started', 'smartphone', 'Accounts, sign-in and set-up', [
+    ('How do I create an account?', '<p>Download the app, tap <strong>Create a free account</strong>, and enter your name, phone number and a password of at least 8 characters. You can add your region and main crop to get tailored advice.</p>'),
+    ('Can I sign in with Google?', '<p>Yes, on Android. After signing in with Google we ask for your phone number once, so you can also use AgroSense by SMS.</p>'),
+    ('I was signed out unexpectedly.', '<p>For your security, an account can only be signed in on one phone at a time. Signing in on another phone signs out the first one. Just sign in again.</p>'),
+    ('I forgot my password.', '<p>Email <a href="mailto:oramsey609@gmail.com">oramsey609@gmail.com</a> from the address on your account, or with your phone number, and we’ll help you reset it. Self-service reset by SMS is coming.</p>'),
+  ]),
+  ('diagnosis', 'Diagnosis', 'camera', 'Photos, results and accuracy', [
+    ('Which crops can AgroSense diagnose?', '<p>Tomato, maize, bell pepper, potato and orange are most relevant in Ghana, plus apple, grape, peach, cherry, squash, strawberry, soybean, blueberry and raspberry. Crops marked “early access” aren’t fully supported yet, so treat their results as a rough guide.</p>'),
+    ('Why does it say it isn’t sure?', '<p>When the model’s confidence is below 60%, or the crop is in early access, AgroSense says so. Usually a better photo fixes it: one leaf, in daylight, close up and in focus. See our <a href="' ~ base ~ 'journal/photos-the-ai-can-read/">photo guide</a>.</p>'),
+    ('How accurate is it?', '<p>97.3% on held-out validation images. Real field photos are harder, so always check the confidence, and talk to an extension officer before buying chemicals for a low-confidence result.</p>'),
+    ('Where is my diagnosis saved?', '<p>Every scan is saved in <strong>History</strong> with its photo and treatment plan. You can delete any scan from its detail screen.</p>'),
+    ('The diagnosis is taking a long time.', '<p>Diagnoses usually take 5–15 seconds. On slow networks, or when the server is waking up, it can take longer. If it fails, check your connection and tap <strong>Try again</strong>.</p>'),
+  ]),
+  ('sms', 'SMS', 'message', 'Using AgroSense without a smartphone', [
+    ('How do I use AgroSense by SMS?', '<p>Text <span class="kbd">HELP</span> to the AgroSense number for the menu. Text <span class="kbd">price tomato</span> for prices, <span class="kbd">weather</span> for the forecast, or send a photo of a sick leaf with the crop name for a diagnosis.</p>'),
+    ('Does SMS cost money?', '<p>AgroSense doesn’t charge for SMS. Your network’s standard SMS or MMS charges apply.</p>'),
+    ('Will my SMS history show in the app?', '<p>Yes. Register in the app with the same phone number and your SMS diagnoses appear in your history.</p>'),
+  ]),
+  ('weather-prices', 'Weather & prices', 'cloud-rain', 'Forecasts, spray outlook and markets', [
+    ('Why is the weather for the wrong place?', '<p>AgroSense uses your phone’s location. If location is off, it uses your saved farm location, or Accra. Turn location on, or add your farm’s location in <strong>Account → Profile &amp; farm</strong> or for each field in <strong>My farms</strong>.</p>'),
+    ('What does the spray outlook mean?', '<p><strong>Good</strong>: dry and calm. <strong>Fair</strong>: some rain risk or breezy — spray early in the morning. <strong>Avoid</strong>: rain is likely to wash the product off, or wind will make it drift.</p>'),
+    ('Where do market prices come from?', '<p>During the beta, prices are indicative daily wholesale estimates for five major markets, and are labelled as such. Always confirm at the market before you travel.</p>'),
+  ]),
+  ('privacy', 'Privacy & data', 'shield', 'Your photos, your account', [
+    ('What happens to my photos?', '<p>Photos are re-encoded with location data removed and linked to your account so you can see your history. Delete any scan at any time.</p>'),
+    ('How do I delete my account?', '<p>Go to <strong>Account → Delete account</strong>. Your account, scans, photos and farm records are deleted permanently.</p>'),
+    ('Is my data sold?', '<p>No. Read our <a href="' ~ base ~ 'legal/privacy.html">privacy policy</a> for details.</p>'),
+  ]),
+] %}
+{% block content %}
+<section class="page-hero">
+  {{ backdrop() }}
+  <div class="wrap">
+    <span class="eyebrow">Help centre</span>
+    <h1 data-split>How can we help?</h1>
+    <div class="search" style="max-width:640px;margin-top:32px" data-reveal>{{ icon('search') }}<label class="sr-only" for="help-search">Search help</label><input id="help-search" type="search" placeholder="Search for answers — e.g. “SMS”, “spray”, “delete”"></div>
+  </div>
+</section>
+
+<section class="section flush-top">
+  <div class="wrap">
+    <div class="help-cats">
+      {% for id, name, ic, desc, qs in groups %}
+      <a href="#{{ id }}" data-reveal><span class="ico-tile" style="margin:0">{{ icon(ic) }}</span><strong>{{ name }}</strong><span>{{ desc }} · {{ qs|length }} articles</span></a>
+      {% endfor %}
+      <a href="{{ base }}crop-guide/" data-reveal><span class="ico-tile sun" style="margin:0">{{ icon('book') }}</span><strong>Crop guide</strong><span>Symptoms and treatment for 26 diseases</span></a>
+      <a href="{{ base }}contact/" data-reveal><span class="ico-tile clay" style="margin:0">{{ icon('mail') }}</span><strong>Contact support</strong><span>We reply within two working days</span></a>
+    </div>
+    <div class="narrow" style="max-width:860px">
+      {% for id, name, ic, desc, qs in groups %}
+      <div data-help-group id="{{ id }}" style="margin-bottom:56px;scroll-margin-top:110px">
+        <h2 style="font-size:clamp(26px,3vw,34px);margin-bottom:18px">{{ name }}</h2>
+        <div class="faq">
+          {% for q, a in qs %}<details><summary>{{ q }}</summary><div class="answer">{{ a|safe }}</div></details>{% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      <p id="help-empty" class="guide-empty" hidden>No answers match that search. <a href="{{ base }}contact/" style="color:var(--brand)">Ask us directly</a>.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

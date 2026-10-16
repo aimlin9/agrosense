@@ -17,7 +17,8 @@
 |---|---|
 | `backend/` | FastAPI API: auth, diagnosis pipeline, weather, prices, SMS webhook, admin. Tested with pytest. |
 | `mobile/` | React Native + Expo app for Android and iOS. See [mobile/README.md](mobile/README.md). |
-| `docs/` | The marketing website and legal pages, served by GitHub Pages. |
+| `website/` | Source for the website: Jinja templates, styles, scripts and the build script. |
+| `docs/` | The built website (49 pages) and legal pages, served by GitHub Pages. Don’t edit generated pages by hand. |
 | `notebooks/` | Training curves and sample predictions from model training. |
 
 ## The model
@@ -59,7 +60,7 @@ Results below 60% confidence, or for crops the model wasn’t trained on, are fl
 |---|---|
 | Auth | `POST /api/auth/register`, `/login`, `/logout`, `/google`, `/admin/login` · `GET/PATCH/DELETE /api/auth/me` · `PATCH /api/auth/me/complete-profile` · `POST /api/auth/me/password` |
 | Diagnosis | `POST /api/diagnose` · `GET /api/diagnoses` (paginated) · `GET /api/diagnoses/stats` · `GET/DELETE /api/diagnoses/{id}` |
-| Catalogue | `GET /api/crops`, `/api/diseases` |
+| Catalogue | `GET /api/crops`, `/api/diseases`, `/api/library`, `/api/library/{slug}` (crop disease guide) |
 | Market | `GET /api/prices/latest` (7-day change + sparkline), `/api/prices`, `/api/prices/trends/{crop_id}` |
 | Weather | `GET /api/weather`, `/api/weather/advisory` |
 | Farm plots | CRUD on `/api/plots` |
@@ -89,10 +90,19 @@ uvicorn app.main:app --reload              # http://localhost:8000/docs
 
 Then the app: see [mobile/README.md](mobile/README.md). Set `EXPO_PUBLIC_API_URL=http://<your-LAN-IP>:8000` in `mobile/.env` to use your local API from a phone.
 
+## Website
+
+```bash
+pip install jinja2
+python website/build.py        # writes the site into docs/
+```
+
+The site has a home page, product overview and five feature pages, how it works, technology, impact, partners, pricing, about, help centre, download, contact, press kit, a journal, and a 26-page crop disease guide generated from `backend/app/data/disease_guide.json` — the same file the app's Crop guide uses. Motion uses GSAP from cdnjs and switches off for visitors who prefer reduced motion; every page works without JavaScript.
+
 ## Tests and checks
 
 ```bash
-cd backend && python -m pytest -q          # 35 tests: real model + routers on SQLite, external services absent
+cd backend && python -m pytest -q          # 36 tests: real model + routers on SQLite, external services absent
 cd mobile && npm run typecheck && npm run lint && npx expo-doctor
 ```
 

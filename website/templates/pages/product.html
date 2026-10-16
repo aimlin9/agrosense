@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, backdrop, cta, section_head %}
+{% block content %}
+<section class="page-hero">
+  {{ backdrop() }}
+  <div class="wrap">
+    <span class="eyebrow">Product</span>
+    <h1 data-split>Five tools. One <em class="accent">farmer’s</em> day.</h1>
+    <p class="lead" data-reveal>AgroSense brings together the decisions a smallholder farmer makes every week — what’s wrong with the crop, when to spray, where to sell — in one app that also works by SMS.</p>
+    <div class="btn-row" data-reveal><a class="btn btn-primary" href="{{ base }}download/" data-magnetic>Get the app {{ icon('arrow-right', 'arrow') }}</a><a class="btn btn-secondary" href="{{ base }}how-it-works/">How a diagnosis works</a></div>
+  </div>
+</section>
+
+{% for f in features %}
+<section class="section{{ ' band-surface' if loop.index is even }}" id="{{ f.slug }}">
+  <div class="wrap split{{ ' reverse' if loop.index is even }}">
+    <div class="split-media" data-reveal>
+      {% if f.shot %}
+      <div class="frame"><img class="screen" src="{{ base }}assets/screens/{{ f.shot }}.webp" alt="{{ f.name }} screen" loading="lazy"></div>
+      {% else %}
+      <div class="frame" style="background:var(--ink);align-items:center;padding:48px">
+        <div class="sms" style="width:100%;max-width:360px;margin:0">
+          <div class="bubble me">[photo] tomato</div>
+          <div class="bubble">AgroSense diagnosis: Tomato - Late blight (100% confident). Pull out and destroy badly infected plants today.</div>
+          <div class="bubble me">weather</div>
+          <div class="bubble">AgroSense weather: 23-30°C today, 8.4mm rain. Rain expected - hold off on spraying.</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    <div data-reveal>
+      <div class="ico-tile">{{ icon(f.icon) }}</div>
+      <span class="eyebrow plain">{{ f.name }}</span>
+      <h2 style="margin-top:14px;font-size:clamp(32px,4vw,50px)">{{ f.title }}</h2>
+      <p class="lead" style="margin-top:20px">{{ f.lead }}</p>
+      <ul class="checks">
+        {% for t, d in f.points[:3] %}<li>{{ icon('check') }}<span><strong>{{ t }}.</strong> {{ d }}</span></li>{% endfor %}
+      </ul>
+      <a class="link-arrow" href="{{ base }}product/{{ f.slug }}/" style="margin-top:28px">More about {{ f.name|lower }} {{ icon('arrow-right') }}</a>
+    </div>
+  </div>
+</section>
+{% endfor %}
+
+<section class="section">
+  <div class="wrap">
+    {{ section_head('Built for the field', 'Designed for the conditions farmers actually work in.', center=True) }}
+    <div class="grid g4">
+      <div class="card" data-reveal><div class="ico-tile sun">{{ icon('sun') }}</div><h4>Readable in sunlight</h4><p>High contrast, large text and a light theme made for outdoor use.</p></div>
+      <div class="card" data-reveal><div class="ico-tile sky">{{ icon('wifi-off') }}</div><h4>Light on data</h4><p>Photos are compressed on the phone; screens cache so they open offline.</p></div>
+      <div class="card" data-reveal><div class="ico-tile">{{ icon('phone') }}</div><h4>Phone-number sign-in</h4><p>No email needed. Google sign-in is there too, if you prefer.</p></div>
+      <div class="card" data-reveal><div class="ico-tile clay">{{ icon('smartphone') }}</div><h4>Android &amp; iOS</h4><p>One app for both platforms, plus SMS for every other phone.</p></div>
+    </div>
+  </div>
+</section>
+{{ cta() }}
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, logo, backdrop, section_head %}
+{% block content %}
+<section class="page-hero">
+  {{ backdrop() }}
+  <div class="wrap">
+    <span class="eyebrow">Press</span>
+    <h1 data-split>Press kit.</h1>
+    <p class="lead" data-reveal>Everything you need to write about AgroSense. For interviews, email <a href="mailto:oramsey609@gmail.com?subject=AgroSense%20press" style="color:var(--brand)">oramsey609@gmail.com</a>.</p>
+  </div>
+</section>
+
+<section class="section flush-top">
+  <div class="wrap split" style="align-items:start">
+    <div data-reveal>
+      <span class="eyebrow">Boilerplate</span>
+      <h2 style="margin-top:18px;font-size:clamp(28px,3vw,38px)">About AgroSense</h2>
+      <p class="lead" style="margin-top:18px">AgroSense is an AI crop advisory service for smallholder farmers in Ghana. Farmers photograph a sick leaf and receive a diagnosis, its severity and a treatment plan written for local conditions, alongside weather-based planting advice and market prices from five major markets. The service also works over SMS for farmers without smartphones. AgroSense is based in Accra and is currently in beta.</p>
+    </div>
+    <div data-reveal>
+      <span class="eyebrow">Key facts</span>
+      <div class="table-wrap" style="margin-top:18px"><table><tbody>
+        <tr><td><strong>Started</strong></td><td>April 2026, Accra, Ghana</td></tr>
+        <tr><td><strong>Founder</strong></td><td>Ramsey Opoku Gyimah</td></tr>
+        <tr><td><strong>Stage</strong></td><td>Beta (Android); iOS next</td></tr>
+        <tr><td><strong>Model</strong></td><td>MobileNetV2, 97.28% validation accuracy, 2.7 MB</td></tr>
+        <tr><td><strong>Coverage</strong></td><td>38 classes, 14 crops, 26 diseases</td></tr>
+        <tr><td><strong>Markets</strong></td><td>Kumasi, Techiman, Makola, Tamale, Kaneshie</td></tr>
+        <tr><td><strong>Channels</strong></td><td>Android, iOS, SMS</td></tr>
+        <tr><td><strong>Price for farmers</strong></td><td>Free</td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-surface">
+  <div class="wrap">
+    {{ section_head('Logo', 'Brand marks.', 'Please don’t stretch, recolour or add effects to the logo.') }}
+    <div class="grid g3">
+      <div class="asset" data-reveal><div class="preview">{{ logo(120) }}</div><div class="row"><strong>Mark · on light</strong><a class="link-arrow" href="{{ base }}assets/apple-touch-icon.png" download>PNG {{ icon('download') }}</a></div></div>
+      <div class="asset" data-reveal><div class="preview dark">{{ logo(120, True) }}</div><div class="row"><strong>Mark · on dark</strong><span class="muted small">SVG on request</span></div></div>
+      <div class="asset" data-reveal><div class="preview"><span class="brand" style="font-size:40px">{{ logo(52) }}AgroSense</span></div><div class="row"><strong>Wordmark</strong><span class="muted small">Fraunces SemiBold</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    {{ section_head('Colour &amp; type', 'The palette.') }}
+    <div class="grid g4">
+      {% for name, hex, use in [('Forest','#0F5427','Brand, buttons'),('Deep forest','#0A3A1B','Dark bands'),('Paper','#F5F3EC','Backgrounds'),('Ink','#16201A','Text'),('Clay','#B4432F','Severe'),('Ochre','#B97412','Warnings'),('Sun','#D69A2D','Weather accents'),('Leaf tint','#E4EDE3','Soft fills')] %}
+      <div class="swatch" data-reveal><div class="c" style="background:{{ hex }}"></div><div class="t"><b>{{ name }}</b>{{ hex }} · {{ use }}</div></div>
+      {% endfor %}
+    </div>
+    <p class="muted" style="margin-top:22px" data-reveal>Typefaces: <strong>Fraunces</strong> for display, <strong>Inter</strong> for interface and body.</p>
+  </div>
+</section>
+
+<section class="section band-surface">
+  <div class="wrap">
+    {{ section_head('Product screenshots', 'From the app.') }}
+    <div class="grid g4">
+      {% for s, label in [('home','Home'),('result','Diagnosis'),('guide-entry','Crop guide'),('weather','Weather'),('market','Market prices'),('farms','My farms'),('history','History'),('onboarding','Onboarding')] %}
+      <a class="asset" href="{{ base }}assets/screens/{{ s }}.webp" download data-reveal><div class="preview" style="aspect-ratio:9/16;background:var(--sunken)"><img src="{{ base }}assets/screens/{{ s }}.webp" alt="{{ label }} screen" loading="lazy"></div><div class="row"><strong>{{ label }}</strong>{{ icon('download') }}</div></a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, backdrop, cta %}
+{% block content %}
+<section class="page-hero">
+  {{ backdrop() }}
+  <div class="wrap">
+    <span class="eyebrow">Crop disease guide</span>
+    <h1 data-split>Know the <em class="accent">enemy.</em></h1>
+    <p class="lead" data-reveal>Symptoms, causes and treatment for every disease AgroSense can recognise — {{ guide|length }} conditions across {{ guide_crops|length }} crops, written for farmers in Ghana.</p>
+  </div>
+</section>
+
+<section class="section flush-top" data-guide>
+  <div class="wrap">
+    <div class="guide-tools" data-reveal>
+      <div class="search">{{ icon('search') }}<label class="sr-only" for="guide-search">Search the guide</label><input id="guide-search" type="search" placeholder="Search by disease, symptom or pathogen"></div>
+      <span class="muted small" id="guide-count">{{ guide|length }} conditions</span>
+    </div>
+    <div class="filter-chips" style="margin-bottom:32px" data-reveal>
+      <button type="button" data-crop-filter="all" aria-pressed="true">All crops</button>
+      {% for c in guide_crops %}<button type="button" data-crop-filter="{{ c }}" aria-pressed="false">{{ c }}</button>{% endfor %}
+    </div>
+    <div class="grid g3">
+      {% for e in guide %}
+      <a class="card guide-card" href="{{ base }}crop-guide/{{ e.slug }}/" data-guide-item data-crop="{{ e.crop }}" data-text="{{ (e.name ~ ' ' ~ e.crop ~ ' ' ~ e.pathogen ~ ' ' ~ e.type ~ ' ' ~ e.summary ~ ' ' ~ e.symptoms|join(' '))|lower }}">
+        <div class="meta"><span class="crop">{{ e.crop }} · {{ e.type }}</span><span class="tag {{ e.severity }}">{{ {'high':'Severe','moderate':'Moderate','low':'Mild'}[e.severity] }}</span></div>
+        <h3>{{ e.name }}</h3>
+        <span class="patho">{{ e.pathogen }}</span>
+        <p>{{ e.summary }}</p>
+        <span class="link-arrow" style="margin-top:auto;padding-top:8px">Read guide {{ icon('arrow-right') }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    <p id="guide-empty" class="guide-empty" hidden>No conditions match. Try a different word or crop.</p>
+  </div>
+</section>
+
+<section class="section band-surface">
+  <div class="wrap split">
+    <div data-reveal>
+      <span class="eyebrow">Not sure what you’re looking at?</span>
+      <h2 style="margin-top:18px">Let AgroSense look for you.</h2>
+      <p class="lead" style="margin-top:18px">Photograph the leaf and get the likely disease, how sure the model is, and a treatment plan — then come back here to learn more.</p>
+      <div class="btn-row" style="margin-top:28px"><a class="btn btn-primary" href="{{ base }}download/" data-magnetic>Get the app {{ icon('arrow-right', 'arrow') }}</a></div>
+    </div>
+    <div class="split-media" data-reveal><div class="frame"><img class="screen" src="{{ base }}assets/screens/guide.webp" alt="The crop guide in the AgroSense app" loading="lazy"></div></div>
+  </div>
+</section>
+{% endblock %}

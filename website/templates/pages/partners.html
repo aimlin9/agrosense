@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, backdrop, section_head %}
+{% block content %}
+<section class="page-hero">
+  {{ backdrop() }}
+  <div class="wrap">
+    <span class="eyebrow">Partners</span>
+    <h1 data-split>Reach every farmer in your network.</h1>
+    <p class="lead" data-reveal>AgroSense gives your farmers a crop doctor, a weather adviser and a price checker — and gives you a clear view of what’s happening across your fields.</p>
+    <div class="btn-row" data-reveal><a class="btn btn-primary" href="#pilot" data-magnetic>Start a pilot {{ icon('arrow-right', 'arrow') }}</a><a class="btn btn-secondary" href="{{ base }}pricing/">See plans</a></div>
+  </div>
+</section>
+
+<section class="section flush-top">
+  <div class="wrap">
+    <div class="grid g2">
+      {% for t, d, ic, pts in [
+        ('Cooperatives & farmer groups', 'Give every member the same expert advice, on the phones they already have.', 'users', ['Onboard members by phone number', 'Group-level view of problems', 'SMS for members without smartphones']),
+        ('Extension services', 'Stretch every officer further by reviewing diagnoses remotely and visiting where it counts.', 'shield', ['Review and correct AI diagnoses', 'Corrections shown to the farmer', 'Prioritise visits by severity']),
+        ('NGOs & programmes', 'Understand where disease is spreading, by crop and region, as it happens.', 'globe', ['Programme-level dashboards', 'Exportable data for reporting', 'Measured pilots with clear goals']),
+        ('Agro-input dealers', 'Connect the right treatment to the right farmer at the moment they need it.', 'droplet', ['Treatment demand by area', 'Guidance on safe use built in', 'No pushing products farmers don’t need']),
+      ] %}
+      <div class="card" data-reveal data-tilt>
+        <div class="ico-tile{{ [' ',' sky',' sun',' clay'][loop.index0] }}">{{ icon(ic) }}</div>
+        <h3>{{ t }}</h3>
+        <p>{{ d }}</p>
+        <ul class="checks" style="margin-top:20px">{% for p in pts %}<li>{{ icon('check') }}<span>{{ p }}</span></li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="muted small" style="margin-top:20px" data-reveal>Some partner tools — dashboards, exports and the officer review screen — are in development during the beta and are built with pilot partners.</p>
+  </div>
+</section>
+
+<section class="section band-surface" id="pilot">
+  <div class="wrap">
+    {{ section_head('The pilot', 'Twelve weeks, four steps, no cost.', 'A pilot is how we earn the right to scale with you. Here’s what it looks like.') }}
+    <div class="timeline">
+      <div class="tl-fill"></div>
+      <div class="tl-item" data-reveal><span class="when">Weeks 1–2</span><h3>Plan together</h3><p>We agree the crops, regions and what success looks like — accuracy, time-to-action, and farmer satisfaction.</p></div>
+      <div class="tl-item" data-reveal><span class="when">Weeks 3–4</span><h3>Onboard farmers and officers</h3><p>We train lead farmers and extension officers, set up groups, and enable SMS for members without smartphones.</p></div>
+      <div class="tl-item" data-reveal><span class="when">Weeks 5–10</span><h3>Run the season</h3><p>Farmers scan, officers review, and we collect field photos to improve the model for your crops.</p></div>
+      <div class="tl-item" data-reveal><span class="when">Weeks 11–12</span><h3>Measure and decide</h3><p>A joint report on outcomes against the goals we set. Then you decide whether to continue.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap contact-grid">
+    <div data-reveal>
+      <span class="eyebrow">Get in touch</span>
+      <h2 style="margin-top:18px">Tell us about your farmers.</h2>
+      <p class="lead" style="margin-top:18px">We’ll reply within two working days to set up a call.</p>
+      <ul class="checks"><li>{{ icon('check') }}<span>Free during the pilot</span></li><li>{{ icon('check') }}<span>Works for groups of 20 to 20,000</span></li><li>{{ icon('check') }}<span>English today; Twi and Hausa on the roadmap</span></li></ul>
+    </div>
+    <div class="card" data-reveal>
+      <form class="form" data-mailto="oramsey609@gmail.com" data-subject="AgroSense partnership" novalidate>
+        <div class="row2">
+          <div class="field"><label for="p-name">Your name</label><input id="p-name" name="name" required autocomplete="name"><span class="err">Please add your name.</span></div>
+          <div class="field"><label for="p-org">Organisation</label><input id="p-org" name="organisation" required autocomplete="organization"><span class="err">Please add your organisation.</span></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="p-email">Email</label><input id="p-email" name="email" type="email" required autocomplete="email"><span class="err">Please enter a valid email.</span></div>
+          <div class="field"><label for="p-type">Type</label><select id="p-type" name="topic" required><option value="">Choose…</option><option>Cooperative</option><option>Extension service</option><option>NGO / programme</option><option>Agro-input dealer</option><option>Other</option></select><span class="err">Please choose one.</span></div>
+        </div>
+        <div class="field"><label for="p-farmers">Roughly how many farmers?</label><input id="p-farmers" name="farmers" inputmode="numeric" placeholder="e.g. 400"></div>
+        <div class="field"><label for="p-msg">What would you like to achieve?</label><textarea id="p-msg" name="message" required placeholder="Crops, regions, goals…"></textarea><span class="err">Please tell us a little more.</span></div>
+        <button class="btn btn-primary" type="submit">Send enquiry {{ icon('arrow-right', 'arrow') }}</button>
+        <p class="form-note">This opens your email app with your message ready to send.</p>
+      </form>
+      <div class="form-success" role="status">Your email app should have opened with your enquiry. If it didn’t, write to <strong>oramsey609@gmail.com</strong>.</div>
+    </div>
+  </div>
+</section>
+{% endblock %}

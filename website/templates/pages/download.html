@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, phone, backdrop %}
+{% block content %}
+<section class="hero">
+  {{ backdrop() }}
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Download</span>
+      <h1 data-split style="font-size:clamp(44px,6.4vw,82px)">Put a crop doctor in your <em class="accent">pocket.</em></h1>
+      <p class="lead" data-reveal>AgroSense is in beta for Android. iOS is coming next — and SMS works on every phone today.</p>
+      <div class="btn-row" data-reveal>
+        <a class="btn btn-primary" data-magnetic href="mailto:oramsey609@gmail.com?subject=AgroSense%20Android%20beta&amp;body=Name%3A%0ARegion%3A%0AMain%20crop%3A%0APhone%20number%3A">{{ icon('download') }} Request the Android beta</a>
+        <a class="btn btn-secondary" href="mailto:oramsey609@gmail.com?subject=AgroSense%20iOS%20waitlist">Join the iOS waitlist</a>
+      </div>
+      <p class="hero-note" data-reveal><span class="live-dot" aria-hidden="true"></span>We send beta invites within two working days.</p>
+    </div>
+    <div class="stage">
+      {{ phone('onboarding', 'AgroSense onboarding screen', 'p2', False) }}
+      {{ phone('home', 'AgroSense home screen', 'p1', False) }}
+    </div>
+  </div>
+</section>
+
+<section class="section flush-top">
+  <div class="wrap grid g3">
+    <div class="store-card" data-reveal>
+      <div class="ico-tile">{{ icon('smartphone') }}</div>
+      <h3>Android beta</h3>
+      <p class="muted">Android 7.0 or newer.</p>
+      <ol class="steps-list"><li>Request access with the button above.</li><li>Open the invite link on your phone and install.</li><li>Create your free account with your phone number.</li></ol>
+    </div>
+    <div class="store-card" data-reveal>
+      <div class="ico-tile sky">{{ icon('smartphone') }}</div>
+      <h3>iPhone</h3>
+      <p class="muted">iOS 15.1 or newer. Coming after the Android beta.</p>
+      <ol class="steps-list"><li>Join the waitlist.</li><li>We’ll email you a TestFlight invite.</li><li>Sign in with the same account as Android.</li></ol>
+    </div>
+    <div class="store-card" style="background:var(--ink);border-color:var(--ink);color:#fff" data-reveal>
+      <div class="ico-tile" style="background:rgba(255,255,255,.1);color:#fff">{{ icon('message') }}</div>
+      <h3 style="color:#fff">Any phone, by SMS</h3>
+      <p style="color:rgba(255,255,255,.7)">No app or internet needed.</p>
+      <div class="sms"><div class="bubble me">HELP</div><div class="bubble">Send a photo of a sick plant · ‘price tomato’ · ‘weather’</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-surface">
+  <div class="wrap">
+    <div class="section-head" data-reveal><span class="eyebrow">Before you start</span><h2 style="margin-top:18px">What you’ll need.</h2></div>
+    <div class="grid g4">
+      <div class="card" data-reveal><div class="ico-tile">{{ icon('phone') }}</div><h4>A phone number</h4><p>Ghana numbers in any format: 024 412 3456 works.</p></div>
+      <div class="card" data-reveal><div class="ico-tile sun">{{ icon('camera') }}</div><h4>A camera</h4><p>Any phone camera. Good light matters more than megapixels.</p></div>
+      <div class="card" data-reveal><div class="ico-tile sky">{{ icon('globe') }}</div><h4>Some data</h4><p>A diagnosis uses roughly 200–400 KB. 3G is enough.</p></div>
+      <div class="card" data-reveal><div class="ico-tile clay">{{ icon('map') }}</div><h4>Location (optional)</h4><p>For weather at your farm. You can enter it manually instead.</p></div>
+    </div>
+  </div>
+</section>
+{% endblock %}

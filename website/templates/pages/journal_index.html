@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, backdrop %}
+{% block content %}
+<section class="page-hero">
+  {{ backdrop() }}
+  <div class="wrap">
+    <span class="eyebrow">Journal</span>
+    <h1 data-split>Notes from the <em class="accent">field.</em></h1>
+    <p class="lead" data-reveal>Practical guides for farmers, and honest notes on how AgroSense is built.</p>
+  </div>
+</section>
+<section class="section flush-top">
+  <div class="wrap">
+    {% set lead = journal[0] %}
+    <a class="post-card post-lead" href="{{ base }}journal/{{ lead.slug }}/" data-reveal>
+      <div class="thumb" style="aspect-ratio:auto;min-height:360px"><img src="{{ base }}{{ lead.image }}" alt=""></div>
+      <div class="body" style="padding:clamp(28px,4vw,48px);justify-content:center">
+        <span class="tag now" style="align-self:flex-start">{{ lead.tag }}</span>
+        <h2 style="font-size:clamp(30px,3.4vw,44px)">{{ lead.title }}</h2>
+        <p class="lead" style="font-size:18px">{{ lead.excerpt }}</p>
+        <span class="meta">{{ lead.read }}</span>
+        <span class="link-arrow" style="margin-top:8px">Read the guide {{ icon('arrow-right') }}</span>
+      </div>
+    </a>
+    <div class="grid g2">
+      {% for p in journal[1:] %}
+      <a class="post-card" href="{{ base }}journal/{{ p.slug }}/" data-reveal>
+        <div class="thumb"><img src="{{ base }}{{ p.image }}" alt="" loading="lazy"></div>
+        <div class="body"><span class="meta">{{ p.tag }} · {{ p.read }}</span><h3>{{ p.title }}</h3><p>{{ p.excerpt }}</p></div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

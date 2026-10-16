@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, backdrop, cta, section_head %}
+{% block content %}
+<section class="page-hero">
+  {{ backdrop() }}
+  <div class="wrap center">
+    <span class="eyebrow plain">Pricing</span>
+    <h1 data-split style="margin-left:auto;margin-right:auto">Free for every farmer. <em class="accent">Always.</em></h1>
+    <p class="lead" data-reveal>Organisations that deploy AgroSense fund it, so farmers never pay to diagnose their crops.</p>
+  </div>
+</section>
+
+<section class="section flush-top">
+  <div class="wrap">
+    <div class="plans" style="margin:0 auto">
+      <div class="plan" data-reveal>
+        <span class="who">Farmers</span>
+        <div class="price">Free</div>
+        <span class="per">Forever, for individual farmers</span>
+        <ul>
+          {% for p in ['Unlimited photo diagnoses (fair use)', 'Treatment plans and crop guide', 'Weather advice and spray outlook', 'Market prices across five markets', 'My farms and scan history', 'SMS access on any phone'] %}<li>{{ icon('check') }}<span>{% if p.endswith("*") %}{{ p[:-1] }} <span class="tag next">Soon</span>{% else %}{{ p }}{% endif %}</span></li>{% endfor %}
+        </ul>
+        <a class="btn btn-secondary" href="{{ base }}download/">Get the app</a>
+      </div>
+      <div class="plan featured" data-reveal>
+        <span class="who">Pilot</span>
+        <div class="price">GH₵0</div>
+        <span class="per">12 weeks, for organisations</span>
+        <ul>
+          {% for p in ['Everything farmers get', 'Onboarding for farmers and officers', 'Expert review for extension officers*', 'Group view of problems by crop*', 'Field-photo model tuning for your crops', 'Joint outcome report'] %}<li>{{ icon('check') }}<span>{% if p.endswith("*") %}{{ p[:-1] }} <span class="tag next">Soon</span>{% else %}{{ p }}{% endif %}</span></li>{% endfor %}
+        </ul>
+        <a class="btn btn-light" href="{{ base }}partners/#pilot" data-magnetic>Start a pilot</a>
+      </div>
+      <div class="plan" data-reveal>
+        <span class="who">Programme</span>
+        <div class="price" style="font-size:40px">Let’s talk</div>
+        <span class="per">For cooperatives, NGOs and agencies at scale</span>
+        <ul>
+          {% for p in ['Everything in the pilot', 'Programme dashboards and exports*', 'Bulk SMS with your sender ID*', 'Local language content*', 'Priority support and training', 'Annual impact reporting'] %}<li>{{ icon('check') }}<span>{% if p.endswith("*") %}{{ p[:-1] }} <span class="tag next">Soon</span>{% else %}{{ p }}{% endif %}</span></li>{% endfor %}
+        </ul>
+        <a class="btn btn-secondary" href="{{ base }}contact/">Contact us</a>
+      </div>
+    </div>
+    <p class="center muted small" style="margin-top:28px" data-reveal>Standard mobile data and SMS charges from your network may apply. Programme pricing depends on the number of farmers, SMS volume and support needs. Items marked “Soon” are in development during the beta.</p>
+  </div>
+</section>
+
+<section class="section band-surface">
+  <div class="wrap">
+    {{ section_head('Compare', 'What’s included.', center=True) }}
+    <div class="table-wrap" data-reveal>
+      <table>
+        <thead><tr><th>Feature</th><th>Farmers</th><th>Pilot</th><th>Programme</th></tr></thead>
+        <tbody>
+          {% for row in [
+            ('Photo diagnosis & treatment plans', 1,1,1), ('Crop guide', 1,1,1), ('Weather & spray outlook', 1,1,1), ('Market prices', 1,1,1),
+            ('SMS access', 1,1,1), ('Expert review by officers*', 0,1,1), ('Group dashboards*', 0,1,1), ('Data exports*', 0,0,1),
+            ('Branded bulk SMS*', 0,0,1), ('Local language content*', 0,0,1)] %}
+          <tr><td>{% set p = row[0] %}{% if p.endswith("*") %}{{ p[:-1] }} <span class="tag next">Soon</span>{% else %}{{ p }}{% endif %}</td>{% for v in row[1:] %}<td>{% if v %}<span style="color:var(--brand)">{{ icon('check') }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>{% endfor %}</tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <style>td svg{width:20px;height:20px}</style>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap narrow">
+    {{ section_head('Pricing questions', 'Good to know.') }}
+    <div class="faq" data-reveal>
+      <details><summary>Will farmers ever be charged?</summary><div class="answer"><p>No. Diagnosis, advice, prices and SMS help stay free for individual farmers. Network charges for data or SMS are set by your mobile operator.</p></div></details>
+      <details><summary>What happens after the pilot?</summary><div class="answer"><p>We share a joint report on the goals we agreed. If you continue, we agree a programme plan; if you don’t, your farmers keep their free accounts.</p></div></details>
+      <details><summary>Do you work outside Ghana?</summary><div class="answer"><p>Ghana is our focus during the beta. The model and platform work anywhere; markets, products and languages need local work, which we’re happy to plan with partners in the region.</p></div></details>
+    </div>
+  </div>
+</section>
+{{ cta() }}
+{% endblock %}

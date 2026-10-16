@@ -1,0 +1,32 @@
+{% extends "journal/_post.html" %}
+{% from "_macros.html" import icon %}
+{% block article %}
+<p><strong>AgroSense’s diagnosis model is a 2.7 MB file.</strong> It recognises 38 classes — 26 diseases and 12 healthy states — across 14 crops, at 97.28% validation accuracy. Here’s how it was built, and why we don’t lean on that number as hard as it might seem.</p>
+
+<h2>Starting from MobileNetV2</h2>
+<p>Training a network from scratch needs far more data and compute than a startup has. Instead we used transfer learning: start from MobileNetV2, a network pretrained on millions of general images and designed to run efficiently on phones, and teach it the new task.</p>
+<p>The training data was PlantVillage: 54,305 images of leaves across 38 classes, trained on a free Kaggle P100 GPU.</p>
+
+<h2>Phase one: train the head</h2>
+<p>We froze the pretrained base and trained only a new classification head for 10 epochs at a learning rate of 1e-3. The base already knows edges, textures and shapes; the head learns which combinations mean <em>early blight</em> or <em>common rust</em>. Validation accuracy reached <strong>94.6%</strong>.</p>
+
+<h2>Phase two: fine-tune carefully</h2>
+<p>Next we unfroze the top 30 layers and trained for another 10 epochs with a learning rate 100 times smaller. Too high a rate here wipes out what the base learned. Validation accuracy climbed to <strong>97.28%</strong>.</p>
+<figure style="margin:28px 0"><img src="{{ base }}assets/training-curves.webp" alt="Training curves across both phases" style="border-radius:16px;border:1px solid var(--line)" loading="lazy"><figcaption class="small muted" style="margin-top:10px">The dashed line marks the start of fine-tuning. The brief loss spike just after it is the “fine-tuning shock” as frozen layers start learning again.</figcaption></figure>
+
+<h2>Small enough for the real world</h2>
+<p>Exported to TensorFlow Lite with default quantisation, the 10 MB Keras model became 2.7 MB with negligible accuracy loss. Today it runs on the server, which keeps the app light; the size means on-device diagnosis without internet is realistic next.</p>
+
+<h2>Why we don’t oversell 97%</h2>
+<p>PlantVillage photos are taken in controlled conditions: one leaf, plain background, even light. Photos from a farm are messier. A validation score on clean images is a ceiling, not a promise.</p>
+<p>So the product is built around honesty rather than the headline number:</p>
+<ul>
+  <li><strong>Crop-aware predictions.</strong> The farmer chooses the crop, and we restrict the answer to diseases of that crop. If the photo doesn’t look like that crop at all, confidence is capped and flagged.</li>
+  <li><strong>Visible confidence.</strong> Every result shows how sure the model is; below 60% it asks for a better photo and an expert.</li>
+  <li><strong>Experts in the loop.</strong> Extension officers can review and correct results, and those corrections become training data.</li>
+</ul>
+<div class="callout info">{{ icon('info') }}<div>On two public-domain field photos of tomato late blight the model had never seen, it answered <em>Late blight</em> at 99.9% and 100%. Encouraging — and exactly why we now need hundreds of real photos from Ghanaian farms to measure properly.</div></div>
+
+<h2>What’s next</h2>
+<p>Field data from pilot partners, models for Ghana’s staples — cassava, cocoa, yam and plantain — and on-device inference. The code is open on <a href="https://github.com/aimlin9/agrosense">GitHub</a>.</p>
+{% endblock %}

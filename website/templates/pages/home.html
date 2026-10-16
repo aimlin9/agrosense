@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, phone, backdrop, cta, section_head %}
+{% block content %}
+
+<section class="hero">
+  {{ backdrop() }}
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Built in Ghana · For smallholder farmers</span>
+      <h1 data-split>A crop doctor in every farmer’s <em class="accent">pocket.</em></h1>
+      <p class="lead" data-reveal>Photograph one sick leaf. AgroSense names the disease, tells you exactly what to do — organic options first — and helps you plan the week around the weather and the market.</p>
+      <div class="btn-row" data-reveal>
+        <a class="btn btn-primary" href="{{ base }}download/" data-magnetic>{{ icon('camera') }} Get the Android beta</a>
+        <a class="btn btn-secondary" href="{{ base }}how-it-works/">See how it works {{ icon('arrow-right', 'arrow') }}</a>
+      </div>
+      <p class="hero-note" data-reveal><span class="live-dot" aria-hidden="true"></span>Free for farmers · Works on slow mobile data · Also by SMS</p>
+    </div>
+    <div class="stage" aria-label="AgroSense app screens">
+      {{ phone('home', 'AgroSense home screen with scan button, quick actions and weather', 'p2', False) }}
+      {{ phone('result', 'Diagnosis of tomato late blight with 100% confidence and an action plan', 'p1', False) }}
+      <div class="chip-float chip-a" aria-hidden="true"><span class="dotc" style="background:var(--danger-tint);color:var(--danger)">{{ icon('activity') }}</span><span>Late blight<small>Tomato · 100% confidence</small></span></div>
+      <div class="chip-float chip-b" aria-hidden="true"><span class="dotc" style="background:var(--brand-tint);color:var(--brand)">{{ icon('check') }}</span><span>Good spray window<small>Tomorrow · dry and calm</small></span></div>
+      <div class="chip-float chip-c" aria-hidden="true"><span class="dotc" style="background:var(--warn-tint);color:var(--warn)">{{ icon('trending-up') }}</span><span>Makola GH₵9.53/kg<small>Tomato · +5.0% this week</small></span></div>
+    </div>
+  </div>
+</section>
+
+<div class="marquee" aria-label="Diseases AgroSense recognises">
+  <div class="marquee-track">
+    {% for round in [1, 2] %}
+      {% for e in guide %}<span class="marquee-item"{% if round == 2 %} aria-hidden="true"{% endif %}><b>{{ e.name }}</b> {{ e.crop }}<i></i></span>{% endfor %}
+    {% endfor %}
+  </div>
+</div>
+
+<section class="section tight">
+  <div class="wrap">
+    <div class="stats" data-reveal>
+      <div><span class="stat-num" data-count="97.3" data-suffix="%">97.3%</span><span class="stat-label">validation accuracy across 54,305 leaf images</span></div>
+      <div><span class="stat-num" data-count="38">38</span><span class="stat-label">diseases and healthy states recognised, across 14 crops</span></div>
+      <div><span class="stat-num" data-count="5">5</span><span class="stat-label">major Ghanaian markets in one price view</span></div>
+      <div><span class="stat-num" data-count="15" data-prefix="&lt;" data-suffix="s">&lt;15s</span><span class="stat-label">from photo to treatment plan</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-dark" aria-labelledby="problem-title">
+  {{ backdrop(True) }}
+  <div class="wrap" style="position:relative">
+    <div class="section-head" data-reveal>
+      <span class="eyebrow">The problem</span>
+      <h2 id="problem-title" data-split>Most crop losses are preventable. The advice just arrives too late.</h2>
+      <p class="lead">A blight caught on Monday can be contained. Caught on Friday, it can take the field. Farmers rarely have an expert within reach when it matters — so we put one in their pocket.</p>
+    </div>
+    <div class="stats" data-reveal>
+      <div><span class="stat-num">20–40%</span><span class="stat-label">of harvests lost each year to pests and disease</span></div>
+      <div><span class="stat-num">1 : 1,500</span><span class="stat-label">extension officers to farmers</span></div>
+      <div><span class="stat-num" data-count="2.2" data-suffix="M">2.2M</span><span class="stat-label">smallholder farms in Ghana</span></div>
+      <div><span class="stat-num" data-count="33" data-suffix="M">33M</span><span class="stat-label">smallholders across West Africa</span></div>
+    </div>
+    <p class="small" style="margin-top:20px;color:rgba(255,255,255,.5)">Figures as cited in the AgroSense project brief; estimates vary by crop, region and season. <a href="{{ base }}impact/" style="color:#fff">Read about our impact →</a></p>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="how-title" data-showcase>
+  <div class="wrap">
+    {{ section_head('How it works', 'One leaf. Four steps. <em class="accent">Under a minute.</em>') }}
+    <div class="showcase">
+      <div class="showcase-steps">
+        <div class="showcase-step"><span class="num">01 · CHOOSE</span><h3>Pick the crop you’re growing</h3><p>AgroSense only weighs diseases that affect that crop, so there are fewer wrong answers — and it tells you when a crop is still in early access.</p></div>
+        <div class="showcase-step"><span class="num">02 · PHOTOGRAPH</span><h3>Photograph one affected leaf</h3><p>Daylight, close up, filling the frame. The photo is compressed on your phone so it sends fast, even on 3G.</p></div>
+        <div class="showcase-step"><span class="num">03 · DIAGNOSE</span><h3>Get the disease and how sure we are</h3><p>The model names the disease, rates its severity and shows its confidence. If it isn’t sure, it says so and asks for a better photo.</p></div>
+        <div class="showcase-step"><span class="num">04 · ACT</span><h3>Follow a clear treatment plan</h3><p>What to do today, organic treatments first, chemicals sold in Ghana and how to use them safely — and how to prevent it next season.</p></div>
+      </div>
+      <div class="showcase-sticky">
+        <div class="showcase-phone">
+          <div class="showcase-progress" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <img src="{{ base }}assets/screens/scan.webp" alt="Choosing a crop" loading="lazy">
+          <img src="{{ base }}assets/screens/confirm.webp" alt="Framing a leaf photo" loading="lazy">
+          <img src="{{ base }}assets/screens/result.webp" alt="The diagnosis" loading="lazy">
+          <img src="{{ base }}assets/screens/result-scrolled.webp" alt="The treatment plan" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section flush-top" aria-labelledby="product-title">
+  <div class="wrap">
+    <div class="section-head row" data-reveal>
+      <div style="max-width:720px"><span class="eyebrow">The product</span><h2 id="product-title" style="margin-top:18px">Everything a farmer checks before a decision.</h2></div>
+      <a class="link-arrow" href="{{ base }}product/">Explore the product {{ icon('arrow-right') }}</a>
+    </div>
+    <div class="bento">
+      <a class="card span-4 row-2" href="{{ base }}product/diagnose/" data-reveal data-tilt>
+        <div class="ico-tile">{{ icon('camera') }}</div>
+        <h3>Crop doctor</h3>
+        <p style="max-width:30em">Diagnosis from one photo, with severity, honest confidence and a treatment plan written for Ghanaian farms.</p>
+        <div class="chips" style="margin-top:18px">{% for e in guide[:6] %}<span class="chip">{{ e.name }}</span>{% endfor %}</div>
+        <div class="bento-shot"><img src="{{ base }}assets/screens/result.webp" alt="" loading="lazy"></div>
+      </a>
+      <a class="card span-2" href="{{ base }}product/weather/" data-reveal data-tilt>
+        <div class="ico-tile sky">{{ icon('cloud-rain') }}</div>
+        <h3>Weather &amp; spray outlook</h3>
+        <p>A forecast for your farm, advice for your crop, and when it’s safe to spray.</p>
+      </a>
+      <a class="card span-2" href="{{ base }}product/market/" data-reveal data-tilt>
+        <div class="ico-tile sun">{{ icon('trending-up') }}</div>
+        <h3>Market prices</h3>
+        <p>Five markets, weekly trends, and the best place to sell today.</p>
+      </a>
+      <a class="card span-3 dark" href="{{ base }}product/sms/" data-reveal>
+        <div class="ico-tile ink" style="background:rgba(255,255,255,.1)">{{ icon('message') }}</div>
+        <h3 style="color:#fff">No smartphone? Text us.</h3>
+        <p>Diagnosis, prices and weather over SMS, on any phone.</p>
+        <div class="sms"><div class="bubble me">price tomato</div><div class="bubble">AgroSense: Tomato prices (GHS/kg): Makola 9.53 · Kumasi 9.28 · Kaneshie 8.61</div><div class="bubble me">weather</div><div class="bubble">AgroSense weather: 23-30°C today, 8.4mm rain. Rain expected - hold off on spraying.</div><div class="bubble me">[photo] tomato</div><div class="bubble">AgroSense diagnosis: Tomato - Late blight (100% confident). Pull out and destroy badly infected plants today.</div></div>
+        <p class="small" style="margin-top:auto;padding-top:18px;color:rgba(255,255,255,.45)">Example conversation</p>
+      </a>
+      <a class="card span-3" href="{{ base }}product/farms/" data-reveal data-tilt>
+        <div class="ico-tile">{{ icon('map') }}</div>
+        <h3>My farms</h3>
+        <p>Every field’s crop, size and season — with days to harvest and a full history of every scan.</p>
+        <div class="bento-shot"><img src="{{ base }}assets/screens/farms.webp" alt="" loading="lazy"></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="section band-surface" aria-labelledby="trust-title">
+  <div class="wrap split">
+    <div class="split-media" data-reveal>
+      <div class="frame"><img class="screen" src="{{ base }}assets/screens/result-unsure.webp" alt="A low-confidence result telling the farmer to retake the photo" loading="lazy"></div>
+    </div>
+    <div data-reveal>
+      <span class="eyebrow">Built to be trusted</span>
+      <h2 id="trust-title" style="margin-top:18px">It tells you when it isn’t sure.</h2>
+      <p class="lead" style="margin-top:20px">Wrong advice costs a farmer money they don’t have. AgroSense is designed to be honest before it is impressive.</p>
+      <ul class="checks">
+        <li>{{ icon('check') }}<span><strong>Confidence on every result.</strong> Below 60%, it asks for a better photo and an expert’s opinion.</span></li>
+        <li>{{ icon('check') }}<span><strong>Organic first.</strong> Cultural and organic methods come before chemicals, which come with safety guidance.</span></li>
+        <li>{{ icon('check') }}<span><strong>Experts in the loop.</strong> Extension officers can review and correct diagnoses.</span></li>
+        <li>{{ icon('check') }}<span><strong>Your data stays yours.</strong> Location is stripped from photos; delete anything, any time.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="guide-title">
+  <div class="wrap">
+    <div class="section-head row" data-reveal>
+      <div style="max-width:720px"><span class="eyebrow">Crop disease guide</span><h2 id="guide-title" style="margin-top:18px">Know the enemy.</h2><p class="lead" style="margin-top:18px">Symptoms, causes and treatment for every disease AgroSense recognises — free, and written for farmers.</p></div>
+      <a class="link-arrow" href="{{ base }}crop-guide/">Browse all {{ guide|length }} diseases {{ icon('arrow-right') }}</a>
+    </div>
+    <div class="grid g3">
+      {% for e in [guide[0], guide[7], guide[11], guide[1], guide[14], guide[15]] %}
+      <a class="card guide-card" href="{{ base }}crop-guide/{{ e.slug }}/" data-reveal>
+        <div class="meta"><span class="crop">{{ e.crop }} · {{ e.type }}</span><span class="tag {{ e.severity }}">{{ {'high':'Severe','moderate':'Moderate','low':'Mild'}[e.severity] }}</span></div>
+        <h3>{{ e.name }}</h3>
+        <span class="patho">{{ e.pathogen }}</span>
+        <p>{{ e.summary }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="photo-band" aria-labelledby="partners-title">
+  <div class="bg" style="background-image:url('{{ base }}assets/field-maize.webp')"></div>
+  <div class="wrap">
+    <span class="eyebrow">For partners</span>
+    <h2 id="partners-title" style="max-width:14em;margin:16px 0 20px" data-split>Reach every farmer in your network, not just the ones you can visit.</h2>
+    <p class="lead" data-reveal>Cooperatives, extension services, NGOs and agro-dealers can pilot AgroSense with their farmers — free during the pilot.</p>
+    <div class="grid g4" style="margin-top:44px">
+      <div class="glass" data-reveal><strong>Cooperatives</strong><span>A crop doctor and price checker for every member.</span></div>
+      <div class="glass" data-reveal><strong>Extension services</strong><span>Review diagnoses remotely; visit where it matters.</span></div>
+      <div class="glass" data-reveal><strong>NGO programmes</strong><span>See where disease is spreading, by crop and region.</span></div>
+      <div class="glass" data-reveal><strong>Agro-dealers</strong><span>Connect the right treatment to the right farmer.</span></div>
+    </div>
+    <div class="btn-row" style="margin-top:36px" data-reveal>
+      <a class="btn btn-light" href="{{ base }}partners/" data-magnetic>Start a pilot {{ icon('arrow-right', 'arrow') }}</a>
+      <a class="btn btn-ghost-light" href="{{ base }}pricing/">See pricing</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="journal-title">
+  <div class="wrap">
+    <div class="section-head row" data-reveal>
+      <div><span class="eyebrow">Journal</span><h2 id="journal-title" style="margin-top:18px">From the field.</h2></div>
+      <a class="link-arrow" href="{{ base }}journal/">All articles {{ icon('arrow-right') }}</a>
+    </div>
+    <div class="grid g3">
+      {% for p in journal %}
+      <a class="post-card" href="{{ base }}journal/{{ p.slug }}/" data-reveal>
+        <div class="thumb"><img src="{{ base }}{{ p.image }}" alt="" loading="lazy" ></div>
+        <div class="body"><span class="meta">{{ p.tag }} · {{ p.read }}</span><h3>{{ p.title }}</h3><p>{{ p.excerpt }}</p></div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section flush-top" aria-labelledby="faq-title">
+  <div class="wrap two-col">
+    <div data-reveal>
+      <span class="eyebrow">FAQ</span>
+      <h2 id="faq-title" style="margin-top:18px">Questions farmers ask us.</h2>
+      <p class="lead" style="margin-top:18px">More answers in the <a href="{{ base }}help/" style="color:var(--brand)">help centre</a>.</p>
+    </div>
+    <div class="faq" data-reveal>
+      <details><summary>How accurate is it?</summary><div class="answer"><p>The model reached 97.3% accuracy on held-out leaf photos. Field photos are harder than lab images, so every result shows its confidence, and AgroSense asks for a better photo or an extension officer when it isn’t sure.</p></div></details>
+      <details><summary>Does it cost anything?</summary><div class="answer"><p>No. AgroSense is free for farmers. Standard data or SMS charges from your network may apply.</p></div></details>
+      <details><summary>Do I need a smartphone?</summary><div class="answer"><p>No. Prices, weather and help work by SMS on any phone. Photo diagnosis by SMS needs a phone that can send picture messages.</p></div></details>
+      <details><summary>Does it replace my extension officer?</summary><div class="answer"><p>No. It helps you act fast between visits and shows the officer exactly what you saw.</p></div></details>
+    </div>
+  </div>
+</section>
+
+{{ cta() }}
+{% endblock %}

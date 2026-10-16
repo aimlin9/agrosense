@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, backdrop, cta, section_head %}
+{% block content %}
+<section class="page-hero">
+  {{ backdrop() }}
+  <div class="wrap">
+    <span class="eyebrow">How it works</span>
+    <h1 data-split>From one photo to a plan in <em class="accent">under a minute.</em></h1>
+    <p class="lead" data-reveal>Here’s exactly what happens between tapping “Take a photo” and reading your treatment plan — and what we do to make sure the answer can be trusted.</p>
+  </div>
+</section>
+
+<section class="section flush-top" data-showcase>
+  <div class="wrap">
+    <div class="showcase">
+      <div class="showcase-steps">
+        <div class="showcase-step"><span class="num">STEP 01</span><h3>Choose the crop</h3><p>Tomato, maize, pepper, potato, orange and nine more. Choosing first means the model only compares diseases that affect your crop. Crops it wasn’t trained on are marked “early access”, so you know to treat the result as a rough guide.</p></div>
+        <div class="showcase-step"><span class="num">STEP 02</span><h3>Take the photo</h3><p>One affected leaf, in daylight, filling the frame. On the phone, AgroSense straightens the photo, shrinks it to a light JPEG and removes its location data — so it uploads quickly and privately.</p></div>
+        <div class="showcase-step"><span class="num">STEP 03</span><h3>The model looks closely</h3><p>A MobileNetV2 network, fine-tuned on 54,305 leaf images, scores all 38 classes it knows, then narrows the answer to your crop. You see the top result, how confident it is, and the other possibilities.</p></div>
+        <div class="showcase-step"><span class="num">STEP 04</span><h3>You get a plan you can follow</h3><p>Severity, what to do today, organic treatment first, chemical options sold in Ghana with safety notes, and prevention for next season. If our AI advice service is unavailable, a curated guide answers instead — you’re never left with nothing.</p></div>
+      </div>
+      <div class="showcase-sticky">
+        <div class="showcase-phone">
+          <div class="showcase-progress" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <img src="{{ base }}assets/screens/scan.webp" alt="Choosing a crop" loading="lazy">
+          <img src="{{ base }}assets/screens/confirm.webp" alt="Framing the photo" loading="lazy">
+          <img src="{{ base }}assets/screens/result.webp" alt="The diagnosis" loading="lazy">
+          <img src="{{ base }}assets/screens/result-scrolled.webp" alt="The treatment plan" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-surface">
+  <div class="wrap">
+    {{ section_head('Photo tips', 'Five habits for a reliable diagnosis.', 'Most uncertain results come from the photo, not the plant.') }}
+    <div class="grid g3">
+      <div class="card" data-reveal><div class="ico-tile sun">{{ icon('sun') }}</div><h4>Daylight, no flash</h4><p>Shade the leaf from harsh midday sun if you can. Flash washes out colour.</p></div>
+      <div class="card" data-reveal><div class="ico-tile">{{ icon('target') }}</div><h4>One leaf, filling the frame</h4><p>Get close. A whole plant from far away gives the model too little to see.</p></div>
+      <div class="card" data-reveal><div class="ico-tile sky">{{ icon('eye') }}</div><h4>Show the damage</h4><p>Pick the leaf with clear spots or discolouration, not the healthiest one.</p></div>
+      <div class="card" data-reveal><div class="ico-tile clay">{{ icon('zap') }}</div><h4>Hold still, in focus</h4><p>Tap the screen to focus. Blurry photos lower confidence.</p></div>
+      <div class="card" data-reveal><div class="ico-tile">{{ icon('layers') }}</div><h4>Plain background</h4><p>Hold the leaf against your palm or the ground to separate it from others.</p></div>
+      <a class="card green" href="{{ base }}journal/photos-the-ai-can-read/" data-reveal><h4 style="color:#fff">Read the full guide</h4><p>With examples of good and bad photos.</p><span class="link-arrow more" style="color:#fff">Open {{ icon('arrow-right') }}</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    {{ section_head('After the diagnosis', 'Your history, your season, your call.') }}
+    <div class="grid g3">
+      <div class="card" data-reveal><div class="ico-tile">{{ icon('clock') }}</div><h3>Saved to history</h3><p>Every scan is kept with its photo and plan, so you can show it to an extension officer later.</p></div>
+      <div class="card" data-reveal><div class="ico-tile sky">{{ icon('users') }}</div><h3>Reviewed by experts</h3><p>Extension officers can confirm or correct a diagnosis. Corrections are shown to you and help train the next model.</p></div>
+      <div class="card" data-reveal><div class="ico-tile sun">{{ icon('book') }}</div><h3>Learn more in the guide</h3><p>Every result links to its crop-guide entry: symptoms, how it spreads, and prevention.</p></div>
+    </div>
+  </div>
+</section>
+{{ cta() }}
+{% endblock %}
